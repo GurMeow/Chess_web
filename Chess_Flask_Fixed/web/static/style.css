@@ -1,0 +1,33 @@
+#main-headline {
+    color: black;
+    position: absolute;
+    left: 50%;
+    white-space: nowrap;
+    transform: translate(-50%, -50%);
+    font-size: 4vw;
+}
+
+#main-board {
+    border: 2px solid rgb(130, 130, 130); /* Change the border color and width as per your preference */
+    border-collapse: collapse;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#follow-img {
+    position: absolute;
+    pointer-events: none; /* So it doesn't block clicks */
+    width: 50px;          /* Adjust size */
+    height: 50px;
+    transition: transform 0.05s ease; /* Smooth following */
+}
+
+.square-button:active {
+    filter: brightness(80%);
+}
+
+body {
+    background-color: rgb(0, 160, 0);
+}
