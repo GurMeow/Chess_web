@@ -27,7 +27,6 @@ function Set_Board_Pieces() {
 
 function find_color(i, j)
 {
-    console.log((i*8 + j) % 2)
     if ((i+j+1) % 2 === 0)
     {
         return [color1, color1Dark];
@@ -39,46 +38,133 @@ function find_color(i, j)
     }
 }
 
-function mousedown(i, j) {
-    const clicked_button = button_board[i][j];
-
-    // If the same square is clicked again, reset it
-    if (previous_button === clicked_button) {
-        const [originalColor, _] = find_color(i, j);
-        clicked_button.style.backgroundColor = originalColor;
-
-        // Clear state
-        previous_button = null;
-        previous_coords = null;
-        active_button = [];
-
-        console.log("Deselected:", i, j);
-        return;
+function same_piece_color_for_turn(piece)
+{
+    if (piece[0] === "W" && whites_turn)
+    {
+        return true
     }
-
-    // Reset previously selected square if it exists
-    if (previous_button) {
-        const [prev_i, prev_j] = previous_coords;
-        const [originalColor, _] = find_color(prev_i, prev_j);
-        previous_button.style.backgroundColor = originalColor;
+    else if (piece[0] === "B" && !whites_turn)
+    {
+        return true
     }
+    return false
+}
 
-    // Set new active square
-    active_button = [i, j];
-    previous_coords = [i, j];
-    previous_button = clicked_button;
+function clear_all_buttons_color()
+{
+    for (let i = 0; i < 8; i++) {
+        for (let j = 0; j < 8; j++) {
+            button_board[i][j].style.backgroundColor = find_color(i, j)[0];
+            possible_squares_to_go = [];
+        }
+    }
+}
 
-    clicked_button.style.backgroundColor = find_color(i, j)[1]; // Or whatever highlight color you like
+function check_if_selected_is_move(i, j)
+{
+    for (let x = 0; x < possible_squares_to_go.length; x++)
+    {
+        if (i === possible_squares_to_go[x][0] && j === possible_squares_to_go[x][1])
+        {
+            return true
+        }
+    }
+    return false
+}
 
-    console.log("Selected:", i, j);
+function write_chess_notation(i, j)
+{
+    console.log(`${value_board[previous_coords[0]][previous_coords[1]]}->${value_board[i][j]}`)
+    return `${value_board[previous_coords[0]][previous_coords[1]]}->${value_board[i][j]}`;
+}
 
-    console.log(get_possible_moves(i, j));
+
+async function mousedown(i, j) {
+    if (!check_if_selected_is_move(i, j))
+    {
+        clear_all_buttons_color();
+
+        const clicked_button = button_board[i][j];
+
+        // If the same square is clicked again, reset it
+        if (previous_button === clicked_button) {
+            const [originalColor, _] = find_color(i, j)[0];
+            clicked_button.style.backgroundColor = originalColor;
+
+            // Clear state
+            previous_button = null;
+            previous_coords = null;
+            active_button = [];
+
+            console.log("Deselected:", i, j);
+            return;
+        }
+
+        // Reset previously selected square if it exists
+        if (previous_button) {
+            const [prev_i, prev_j] = previous_coords;
+            const [originalColor, _] = find_color(prev_i, prev_j);
+            previous_button.style.backgroundColor = originalColor;
+        }
+
+        console.log(pieces_board[i][j] !== "-" && same_piece_color_for_turn(pieces_board[i][j]))
+
+        // Set new active square
+        if (pieces_board[i][j] !== "-" && same_piece_color_for_turn(pieces_board[i][j]))
+        {
+            console.log("e")
+            active_button = [i, j];
+            previous_coords = [i, j];
+            previous_button = clicked_button;
+
+            clicked_button.style.backgroundColor = find_color(i, j)[1]; // Or whatever highlight color you like
+
+            console.log("Selected:", i, j);
+
+            const possible_moves = await get_possible_moves(i, j);
+
+            for (let i = 0; i < possible_moves.length; i++)
+            {
+                const [possible_i, possible_j] = possible_moves[i];
+                console.log(possible_i, possible_j)
+                button_board[possible_i][possible_j].style.backgroundColor = find_color(possible_i, possible_j)[1];
+                possible_squares_to_go.push(possible_moves[i]);
+            }
+        }
+        else
+        {
+            active_button = null;
+            previous_coords = null;
+            previous_button = null;
+            possible_squares_to_go = [];
+        }
+        console.log(possible_squares_to_go)
+    }
+    else
+    {
+        await play_move(write_chess_notation(i, j));
+
+        console.log("e2")
+        clear_all_buttons_color();
+
+        whites_turn = !whites_turn;
+
+        pieces_board[i][j] = pieces_board[previous_coords[0]][previous_coords[1]];
+        pieces_board[previous_coords[0]][previous_coords[1]] = "-";
+
+        const piece_img = previous_button.querySelector("img").cloneNode(true);
+        const img = button_board[previous_coords[0]][previous_coords[1]].querySelector("img");
+        img.src = "";
+        img.style.display = "none";
+        Set_Picture(i, j);
+    }
 }
 
 
 function mouseup(i, j)
 {
-
+    return [i, j];
 }
 
 
@@ -184,6 +270,10 @@ let active_button = [];
 let previous_button = null;
 let previous_coords = null;
 
+let possible_squares_to_go = [];
+
+let whites_turn = true;
+
 
 const pieces_board =
 [
@@ -199,16 +289,27 @@ const pieces_board =
 
 Create_board();
 
-console.log(button_board[0][0])
-
-console.log(value_board)
-
 
 async function get_possible_moves(posx, posy) {
     const formData = new FormData();
     formData.append("posx", posx);
     formData.append("posy", posy);
-    await fetch("http://127.0.0.1:5000/get_move", {
+
+    const response = await fetch("http://127.0.0.1:5000/get_move", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json(); // parse the JSON response
+    console.log(data); // do something with the data
+    return data;
+}
+
+
+async function play_move(notation) {
+    const formData = new FormData();
+    formData.append("move_encoding", notation);
+    await fetch("http://127.0.0.1:5000/play_move", {
         method: "POST",
         body: formData
     });
