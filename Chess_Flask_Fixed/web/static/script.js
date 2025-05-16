@@ -154,10 +154,14 @@ async function mousedown(i, j) {
         pieces_board[previous_coords[0]][previous_coords[1]] = "-";
 
         const piece_img = previous_button.querySelector("img").cloneNode(true);
+
         const img = button_board[previous_coords[0]][previous_coords[1]].querySelector("img");
         img.src = "";
         img.style.display = "none";
-        Set_Picture(i, j);
+        button_board[i][j].querySelector("img").src = Enter_picture(pieces_board[i][j]);
+        button_board[i][j].querySelector("img").style.width = "4vw";
+        button_board[i][j].querySelector("img").style.height = "4vw";
+        button_board[i][j].querySelector("img").style.display = "";
     }
 }
 
