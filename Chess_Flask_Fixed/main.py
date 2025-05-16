@@ -240,15 +240,14 @@ def init_game_board():
 
     return board
 
+turn = "white"
+depth = 2
+chess_board = init_game_board()
+chess_board = update_possible_moves(chess_board)
 
 if __name__ == '__main__':
-
-    depth = 2
     autoplay = False
-    turn = "white"
     run = True
-    chess_board = init_game_board()
-    chess_board = update_possible_moves(chess_board)
     print_board(chess_board)
     start = time.time()
     command = test_file.minimax_move_undo(depth,chess_board,turn,1)[1]
@@ -306,20 +305,28 @@ app.static_folder = static_dir
 
 @app.route("/")
 def load_home_page():
+    global turn, depth, chess_board
+    turn = "white"
+    depth = 2
+    chess_board = init_game_board()
+    chess_board = update_possible_moves(chess_board)
     return render_template("index.html")
 
 @app.route("/get_move", methods=['POST'])
 def get_possible_moves():
     posx = request.form.get('posx')
     posy = request.form.get('posy')
-    return chess_board[int(posx)][int(posy)]["possible_move"]
+    print(chess_board)
+    return jsonify(chess_board[int(posx)][int(posy)]["possible_moves"])
 
 
-@app.route("/play_move")
+@app.route("/play_move", methods=['POST'])
 def play_move():
-    global turn
+    global turn, chess_board
     move_encoding = request.form.get("move_encoding")
-    return encoding_to_move(move_encoding)
+    chess_board = encoding_to_move(move_encoding)
+    chess_board = update_possible_moves(chess_board)
+    return jsonify(chess_board)
 
 
 @app.route("/get_engine_move")
