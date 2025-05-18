@@ -53,6 +53,8 @@ function same_piece_color_for_turn(piece)
 
 function clear_all_buttons_color()
 {
+    king_castle = false;
+    queen_castle = false;
     for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
             button_board[i][j].style.backgroundColor = find_color(i, j)[0];
@@ -73,10 +75,44 @@ function check_if_selected_is_move(i, j)
     return false
 }
 
-function write_chess_notation(i, j)
-{
+function write_chess_notation(i, j) {
     console.log(`${value_board[previous_coords[0]][previous_coords[1]]}->${value_board[i][j]}`)
     return `${value_board[previous_coords[0]][previous_coords[1]]}->${value_board[i][j]}`;
+}
+
+function check_for_castles(possible_moves)
+{
+    for (let i = 0; i < possible_moves.length; i++)
+    {
+        if (possible_moves[i][0] === "o-o")
+        {
+            king_castle = true;
+        }
+        if (possible_moves[i][0] === "o-o-o")
+        {
+            queen_castle = true;
+        }
+    }
+}
+
+function switch_rook_for_castle(i, j, i2, j2)
+{
+    pieces_board[i][j] = "-";
+    if (whites_turn)
+    {
+        pieces_board[i2][j2] = "WRook";
+    }
+    else
+    {
+        pieces_board[i2][j2] = "BRook";
+    }
+    const rook_img = button_board[i][j].querySelector("img");
+    rook_img.src = "";
+    rook_img.style.display = "none";
+    button_board[i2][j2].querySelector("img").src = Enter_picture(pieces_board[i2][j2]);
+    button_board[i2][j2].querySelector("img").style.width = "4vw";
+    button_board[i2][j2].querySelector("img").style.height = "4vw";
+    button_board[i2][j2].querySelector("img").style.display = "";
 }
 
 
@@ -123,14 +159,45 @@ async function mousedown(i, j) {
             console.log("Selected:", i, j);
 
             const possible_moves = await get_possible_moves(i, j);
+            check_for_castles(possible_moves);
+
+            if (king_castle && whites_turn)
+            {
+                possible_squares_to_go.push([7, 6]);
+                button_board[7][6].style.backgroundColor = find_color(7, 6)[1];
+                console.log("r")
+            }
+            else if (king_castle)
+            {
+                possible_squares_to_go.push([0, 6]);
+                button_board[0][6].style.backgroundColor = find_color(0, 6)[1];
+                console.log("r")
+            }
+
+            if (queen_castle && whites_turn)
+            {
+                possible_squares_to_go.push([7, 2]);
+                button_board[7][2].style.backgroundColor = find_color(7, 2)[1];
+                console.log("r")
+            }
+            else if (queen_castle)
+            {
+                possible_squares_to_go.push([0, 2]);
+                button_board[0][2].style.backgroundColor = find_color(0, 2)[1];
+                console.log("r")
+            }
 
             for (let i = 0; i < possible_moves.length; i++)
             {
-                const [possible_i, possible_j] = possible_moves[i];
-                console.log(possible_i, possible_j)
-                button_board[possible_i][possible_j].style.backgroundColor = find_color(possible_i, possible_j)[1];
-                possible_squares_to_go.push(possible_moves[i]);
+                if (possible_moves[i][0] !== "o-o" && possible_moves[i][0] !== "o-o-o")
+                {
+                    const [possible_i, possible_j] = possible_moves[i];
+                    console.log(possible_i, possible_j)
+                    button_board[possible_i][possible_j].style.backgroundColor = find_color(possible_i, possible_j)[1];
+                    possible_squares_to_go.push(possible_moves[i]);
+                }
             }
+            console.log(possible_squares_to_go)
         }
         else
         {
@@ -143,17 +210,47 @@ async function mousedown(i, j) {
     }
     else
     {
-        await play_move(write_chess_notation(i, j));
+        console.log(king_castle, i, j)
+        if (king_castle && i === 7 && j === 6)
+        {
+            switch_rook_for_castle(7, 7, 7, 5);
+
+            await play_move("o-o");
+        }
+        else if (king_castle && i === 0 && j === 6)
+        {
+            switch_rook_for_castle(0, 7, 0, 5);
+
+            await play_move("o-o")
+        }
+        else if (queen_castle && i === 7 && j === 2)
+        {
+            switch_rook_for_castle(7, 0, 7, 3);
+
+            await play_move("o-o-o")
+        }
+        else if (queen_castle && i === 0 && j === 2)
+        {
+            switch_rook_for_castle(0, 0, 0, 3);
+
+            await play_move("o-o-o");
+        }
+        else
+        {
+            await play_move(write_chess_notation(i, j));
+        }
 
         console.log("e2")
         clear_all_buttons_color();
 
         whites_turn = !whites_turn;
+        king_castle = false;
+        queen_castle = false;
 
         pieces_board[i][j] = pieces_board[previous_coords[0]][previous_coords[1]];
         pieces_board[previous_coords[0]][previous_coords[1]] = "-";
 
-        const piece_img = previous_button.querySelector("img").cloneNode(true);
+        // const piece_img = previous_button.querySelector("img").cloneNode(true);
 
         const img = button_board[previous_coords[0]][previous_coords[1]].querySelector("img");
         img.src = "";
@@ -277,6 +374,9 @@ let previous_coords = null;
 let possible_squares_to_go = [];
 
 let whites_turn = true;
+
+let king_castle = false;
+let queen_castle = false;
 
 
 const pieces_board =
