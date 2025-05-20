@@ -152,12 +152,14 @@ def generate_moves(board, turn):
                     # king from col4 to col6 or col2
                     if notation == "o-o":
                         # kingside
+                        new_board[row0][4]["hasCastled"] = True
                         new_board[row0][6] = new_board[row0][4]
                         new_board[row0][5] = new_board[row0][7]
                         new_board[row0][4] = {"color": "-1", "piece": "-1"}
                         new_board[row0][7] = {"color": "-1", "piece": "-1"}
                     else:
                         # queenside
+                        new_board[row0][4]["hasCastled"] = True
                         new_board[row0][2] = new_board[row0][4]
                         new_board[row0][3] = new_board[row0][0]
                         new_board[row0][4] = {"color": "-1", "piece": "-1"}
@@ -234,11 +236,14 @@ def minimax_move_undo(depth, board, turn, current_depth,
             if val > best[0]:
                 best = [val, notation]
             alpha = max(alpha, val)
+            if val > 1000:
+                return best
         else:
             if val < best[0]:
                 best = [val, notation]
             beta = min(beta, val)
-
+            if val < -1000:
+                return best
         if beta <= alpha:
             break
 
