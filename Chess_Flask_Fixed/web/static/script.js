@@ -1,73 +1,3 @@
-function Set_promotion_board()
-{
-    for (let i = 0; i < 4; i++)
-    {
-        const promotion_btn = document.createElement("button");
-        promotion_btn.className = "square-button"
-        promotion_btn.style.width = "100%";
-        promotion_btn.style.height = "6vw";
-        promotion_btn.style.padding = "0";
-        promotion_btn.style.margin = "0";
-        promotion_btn.style.border = "none";
-        promotion_btn.style.display = "";
-        promotion_btn.style.backgroundColor = "white";
-        promotion_btn.disabled = true;
-
-
-        const promotion_btn_img = document.createElement("img");
-        promotion_btn_img.src = "";
-        promotion_btn_img.style.display = "";
-        promotion_btn.appendChild(promotion_btn_img);
-
-        promotion_board.appendChild(promotion_btn);
-    }
-
-    const promotion_btns = promotion_board.querySelectorAll("button");
-
-    promotion_btns[0].addEventListener("mousedown", () => play_promotion("qu"));
-    promotion_btns[1].addEventListener("mousedown", () => play_promotion("ro"));
-    promotion_btns[2].addEventListener("mousedown", () => play_promotion("bi"));
-    promotion_btns[3].addEventListener("mousedown", () => play_promotion("kn"));
-}
-
-
-function disable_promotion()
-{
-    promotion_board.style.display = "none";
-    const promotion_btns = promotion_board.querySelectorAll("button");
-
-    promotion_btns.forEach(button => {
-        button.disabled = true;
-        button.querySelector("img").src = "";
-    });
-}
-
-function enable_promotion()
-{
-    promotion_board.style.display = "";
-    const promotion_btns = promotion_board.querySelectorAll("button");
-
-    promotion_btns.forEach(button => {
-        button.disabled = false;
-    });
-    if (whites_turn)
-    {
-        promotion_btns[0].querySelector("img").src = Enter_picture("WQueen");
-        promotion_btns[1].querySelector("img").src = Enter_picture("WRook");
-        promotion_btns[2].querySelector("img").src = Enter_picture("WBishop");
-        promotion_btns[3].querySelector("img").src = Enter_picture("WKnight");
-    }
-    else
-    {
-        promotion_btns[0].querySelector("img").src = Enter_picture("BQueen");
-        promotion_btns[1].querySelector("img").src = Enter_picture("BRook");
-        promotion_btns[2].querySelector("img").src = Enter_picture("BBishop");
-        promotion_btns[3].querySelector("img").src = Enter_picture("BKnight");
-    }
-}
-
-
-
 function Get_Picture(i, j) {
     return button_board[i][j].querySelector("img");
 }
@@ -125,12 +55,46 @@ function clear_all_buttons_color()
 {
     king_castle = false;
     queen_castle = false;
-    promotion = false;
     for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
             button_board[i][j].style.backgroundColor = find_color(i, j)[0];
             possible_squares_to_go = [];
         }
+    }
+}
+
+function disable_promotion()
+{
+    promotion_board.style.display = "none";
+    const promotion_btns = promotion_board.querySelectorAll("button");
+
+    promotion_btns.forEach(button => {
+        button.disabled = true;
+        button.querySelector("img").src = "";
+    });
+}
+
+function enable_promotion()
+{
+    promotion_board.style.display = "";
+    const promotion_btns = promotion_board.querySelectorAll("button");
+
+    promotion_btns.forEach(button => {
+        button.disabled = false;
+    });
+    if (whites_turn)
+    {
+        promotion_btns[0].querySelector("img").src = Enter_picture("WQueen");
+        promotion_btns[1].querySelector("img").src = Enter_picture("WRook");
+        promotion_btns[2].querySelector("img").src = Enter_picture("WBishop");
+        promotion_btns[3].querySelector("img").src = Enter_picture("WKnight");
+    }
+    else
+    {
+        promotion_btns[0].querySelector("img").src = Enter_picture("BQueen");
+        promotion_btns[1].querySelector("img").src = Enter_picture("BRook");
+        promotion_btns[2].querySelector("img").src = Enter_picture("BBishop");
+        promotion_btns[3].querySelector("img").src = Enter_picture("BKnight");
     }
 }
 
@@ -164,8 +128,6 @@ function check_for_castles(possible_moves)
             queen_castle = true;
         }
     }
-
-    clear_all_buttons_color();
 }
 
 function switch_rook_for_castle(i, j, i2, j2)
@@ -188,47 +150,9 @@ function switch_rook_for_castle(i, j, i2, j2)
     button_board[i2][j2].querySelector("img").style.display = "";
 }
 
-function move_piece(i, j)
-{
-    clear_all_buttons_color();
-    whites_turn = !whites_turn;
-    king_castle = false;
-    queen_castle = false;
-    promotion = false;
-
-    pieces_board[i][j] = pieces_board[previous_coords[0]][previous_coords[1]];
-    pieces_board[previous_coords[0]][previous_coords[1]] = "-";
-
-    const img = button_board[previous_coords[0]][previous_coords[1]].querySelector("img");
-    img.src = "";
-    img.style.display = "none";
-    button_board[i][j].querySelector("img").src = Enter_picture(pieces_board[i][j]);
-    button_board[i][j].querySelector("img").style.width = "4vw";
-    button_board[i][j].querySelector("img").style.height = "4vw";
-    button_board[i][j].querySelector("img").style.display = "";
-}
-
-
-async function play_promotion(piece)
-{
-    if (whites_turn)
-    {
-        move_piece(0, pieces_board[1]);
-        await play_move(`${write_chess_notation(0, previous_coords)}${piece}`);
-    }
-    else
-    {
-        move_piece(7, pieces_board[1]);
-        await play_move(`${write_chess_notation(7, previous_coords)}${piece}`);
-    }
-
-
-    disable_promotion();
-}
-
 
 async function mousedown(i, j) {
-    if (!check_if_selected_is_move(i, j) && can_play)
+    if (!check_if_selected_is_move(i, j))
     {
         clear_all_buttons_color();
 
@@ -264,9 +188,8 @@ async function mousedown(i, j) {
             active_button = [i, j];
             previous_coords = [i, j];
             previous_button = clicked_button;
-            console.log(find_color(i, j)[1])
+
             clicked_button.style.backgroundColor = find_color(i, j)[1]; // Or whatever highlight color you like
-            console.log(clicked_button)
 
             console.log("Selected:", i, j);
 
@@ -320,8 +243,10 @@ async function mousedown(i, j) {
         }
         console.log(possible_squares_to_go)
     }
-    else if(can_play)
+    else
     {
+        console.log(pieces_board[previous_coords[0]][previous_coords[1]], i)
+
         if (i === 0 && pieces_board[previous_coords[0]][previous_coords[1]] === "WPawn")
         {
             promotion = true;
@@ -333,6 +258,8 @@ async function mousedown(i, j) {
             promotion = true;
             enable_promotion();
         }
+
+        current_coords = [i, j];
 
         console.log(king_castle, i, j)
         if (king_castle && i === 7 && j === 6)
@@ -359,13 +286,33 @@ async function mousedown(i, j) {
 
             await play_move("o-o-o");
         }
-        else if(!promotion)
+        else if (!promotion)
         {
             await play_move(write_chess_notation(i, j));
         }
 
         console.log("e2")
-        move_piece(i, j)
+        clear_all_buttons_color();
+
+        pieces_board[i][j] = pieces_board[previous_coords[0]][previous_coords[1]];
+        pieces_board[previous_coords[0]][previous_coords[1]] = "-";
+
+
+
+        whites_turn = !whites_turn;
+        king_castle = false;
+        queen_castle = false;
+
+
+        // const piece_img = previous_button.querySelector("img").cloneNode(true);
+
+        const img = button_board[previous_coords[0]][previous_coords[1]].querySelector("img");
+        img.src = "";
+        img.style.display = "none";
+        button_board[i][j].querySelector("img").src = Enter_picture(pieces_board[i][j]);
+        button_board[i][j].querySelector("img").style.width = "4vw";
+        button_board[i][j].querySelector("img").style.height = "4vw";
+        button_board[i][j].querySelector("img").style.display = "";
     }
 }
 
@@ -373,6 +320,53 @@ async function mousedown(i, j) {
 function mouseup(i, j)
 {
     return [i, j];
+}
+
+async function play_promotion(piece)
+{
+    if (whites_turn)
+    {
+        await play_move(`${write_chess_notation(0, previous_coords[1])}${piece}`)
+    }
+    else
+    {
+        await play_move(`${write_chess_notation(7, previous_coords[1])}${piece}`)
+    }
+    console.log(previous_coords)
+    console.log(`${write_chess_notation(7, previous_coords[1])}${piece}`)
+}
+
+
+function Set_promotion_board()
+{
+    for (let i = 0; i < 4; i++)
+    {
+        const promotion_btn = document.createElement("button");
+        promotion_btn.className = "square-button"
+        promotion_btn.style.width = "100%";
+        promotion_btn.style.height = "6vw";
+        promotion_btn.style.padding = "0";
+        promotion_btn.style.margin = "0";
+        promotion_btn.style.border = "none";
+        promotion_btn.style.display = "";
+        promotion_btn.style.backgroundColor = "white";
+
+
+        const promotion_btn_img = document.createElement("img");
+        promotion_btn_img.src = "";
+        promotion_btn_img.className = "promotion-img"
+        promotion_btn_img.style.display = "";
+        promotion_btn.appendChild(promotion_btn_img);
+
+        promotion_board.appendChild(promotion_btn);
+    }
+
+    const promotion_btns = promotion_board.querySelectorAll("button");
+
+    promotion_btns[0].addEventListener("mousedown", () => play_promotion("qu"));
+    promotion_btns[1].addEventListener("mousedown", () => play_promotion("ro"));
+    promotion_btns[2].addEventListener("mousedown", () => play_promotion("bi"));
+    promotion_btns[3].addEventListener("mousedown", () => play_promotion("kn"));
 }
 
 
@@ -478,16 +472,15 @@ const button_board = [];
 let active_button = [];
 let previous_button = null;
 let previous_coords = null;
+let current_coords = [];
 
 let possible_squares_to_go = [];
 
 let whites_turn = true;
-let can_play = true;
 
 let king_castle = false;
 let queen_castle = false;
-
-let promotion = true;
+let promotion = false;
 
 
 const pieces_board =
@@ -505,6 +498,7 @@ const pieces_board =
 Create_board();
 Set_promotion_board();
 
+disable_promotion();
 
 async function get_possible_moves(posx, posy) {
     const formData = new FormData();
