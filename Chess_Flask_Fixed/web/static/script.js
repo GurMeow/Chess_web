@@ -51,6 +51,46 @@ function same_piece_color_for_turn(piece)
     return false
 }
 
+function chess_piece_inverted(piece)
+{
+    if (!whites_turn)
+    {
+        if (piece === "qu")
+        {
+            return "WQueen";
+        }
+        else if (piece === "ro")
+        {
+            return "WRook";
+        }
+        else if (piece === "bi")
+        {
+            return "WBishop";
+        }
+        else if (piece === "kn") {
+            return "WKnight";
+        }
+    }
+    else
+    {
+        if (piece === "qu")
+        {
+            return "BWQueen";
+        }
+        else if (piece === "ro")
+        {
+            return "BRook";
+        }
+        else if (piece === "bi")
+        {
+            return "BBishop";
+        }
+        else if (piece === "kn") {
+            return "BKnight";
+        }
+    }
+}
+
 function clear_all_buttons_color()
 {
     king_castle = false;
@@ -152,7 +192,7 @@ function switch_rook_for_castle(i, j, i2, j2)
 
 
 async function mousedown(i, j) {
-    if (!check_if_selected_is_move(i, j))
+    if (!check_if_selected_is_move(i, j) && can_play)
     {
         clear_all_buttons_color();
 
@@ -243,23 +283,25 @@ async function mousedown(i, j) {
         }
         console.log(possible_squares_to_go)
     }
-    else
+    else if (can_play)
     {
         console.log(pieces_board[previous_coords[0]][previous_coords[1]], i)
 
         if (i === 0 && pieces_board[previous_coords[0]][previous_coords[1]] === "WPawn")
         {
+            can_play = false;
             promotion = true;
             enable_promotion();
 
         }
         else if (i === 7 && pieces_board[previous_coords[0]][previous_coords[1]] === "BPawn")
         {
+            can_play = false;
             promotion = true;
             enable_promotion();
         }
 
-        current_coords = [i, j];
+        promoting_pawn_coords = [i, j];
 
         console.log(king_castle, i, j)
         if (king_castle && i === 7 && j === 6)
@@ -298,7 +340,6 @@ async function mousedown(i, j) {
         pieces_board[previous_coords[0]][previous_coords[1]] = "-";
 
 
-
         whites_turn = !whites_turn;
         king_castle = false;
         queen_castle = false;
@@ -324,16 +365,36 @@ function mouseup(i, j)
 
 async function play_promotion(piece)
 {
+    const [i, j] = promoting_pawn_coords;
+
+    console.log(write_chess_notation(promoting_pawn_coords[0], promoting_pawn_coords[1]), promoting_pawn_coords[0], promoting_pawn_coords[1])
     if (whites_turn)
     {
-        await play_move(`${write_chess_notation(0, previous_coords[1])}${piece}`)
+        await play_move(`${write_chess_notation(i, j)}${piece}`)
     }
     else
     {
-        await play_move(`${write_chess_notation(7, previous_coords[1])}${piece}`)
+        await play_move(`${write_chess_notation(i, j)}${piece}`)
     }
     console.log(previous_coords)
     console.log(`${write_chess_notation(7, previous_coords[1])}${piece}`)
+
+    disable_promotion();
+
+    can_play = true;
+    promotion = false;
+
+    console.log(whites_turn)
+
+    pieces_board[i][j] = chess_piece_inverted(piece);
+
+    const promoted_img = button_board[previous_coords[0]][previous_coords[1]].querySelector("img");
+    promoted_img.src = "";
+    promoted_img.style.display = "none";
+    button_board[i][j].querySelector("img").src = Enter_picture(pieces_board[i][j]);
+    button_board[i][j].querySelector("img").style.width = "4vw";
+    button_board[i][j].querySelector("img").style.height = "4vw";
+    button_board[i][j].querySelector("img").style.display = "";
 }
 
 
@@ -472,7 +533,6 @@ const button_board = [];
 let active_button = [];
 let previous_button = null;
 let previous_coords = null;
-let current_coords = [];
 
 let possible_squares_to_go = [];
 
@@ -481,6 +541,10 @@ let whites_turn = true;
 let king_castle = false;
 let queen_castle = false;
 let promotion = false;
+
+let promoting_pawn_coords = [];
+
+let can_play = true;
 
 
 const pieces_board =
