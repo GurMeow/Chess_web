@@ -75,7 +75,7 @@ function chess_piece_inverted(piece)
     {
         if (piece === "qu")
         {
-            return "BWQueen";
+            return "BQueen";
         }
         else if (piece === "ro")
         {
