@@ -29,10 +29,13 @@
     top: 50%;
     left: 25%;
     transform: translate(-50%, -50%);
-    background-color: white;
     width: 6vw;          /* Adjust size */
-    height: 35vw;
-    display: none;
+    height: 30vw;
+}
+
+.promotion-img {
+    width: 4vw;
+    height: 4vw;
 }
 
 .square-button:active {
