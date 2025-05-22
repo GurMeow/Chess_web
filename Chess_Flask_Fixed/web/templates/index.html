@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess</title>
+    <title>Main Game | Chess App</title>
     <link rel="stylesheet" href="../static/style.css">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
 </head>
 <body>
     <h1 id="main-headline"><u>CHESS</u></h1>
@@ -17,6 +17,8 @@
     <div id="promotion-board">
 
     </div>
+
+    <button id="return-button"><--  |  Return</button>
 
     <script src="../static/script.js"></script>
 </body>
