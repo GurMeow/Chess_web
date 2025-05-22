@@ -38,6 +38,30 @@ function find_color(i, j)
     }
 }
 
+function show_winning_text(winner)
+{
+    winning_text.style.display = "";
+    winning_text.innerHTML = `${winner} won!`;
+    replay_button.style.display = "";
+    replay_button.disabled = false;
+}
+
+function check_for_king(i, j)
+{
+    if (whites_turn && pieces_board[i][j] === "BKing")
+    {
+        show_winning_text("White");
+        return false;
+    }
+    else if (pieces_board[i][j] === "WKing")
+    {
+        show_winning_text("Black");
+        return false;
+    }
+
+    return true;
+}
+
 function unwrite_notation(notation)
 {
 
@@ -290,16 +314,18 @@ async function mousedown(i, j) {
     }
     else if (can_play)
     {
+        can_play = check_for_king(i, j);
+
         console.log(pieces_board[previous_coords[0]][previous_coords[1]], i)
 
-        if (i === 0 && pieces_board[previous_coords[0]][previous_coords[1]] === "WPawn")
+        if (i === 0 && pieces_board[previous_coords[0]][previous_coords[1]] === "WPawn" && can_play)
         {
             can_play = false;
             promotion = true;
             enable_promotion();
 
         }
-        else if (i === 7 && pieces_board[previous_coords[0]][previous_coords[1]] === "BPawn")
+        else if (i === 7 && pieces_board[previous_coords[0]][previous_coords[1]] === "BPawn" && can_play)
         {
             can_play = false;
             promotion = true;
@@ -527,6 +553,16 @@ async function Create_board(){
 const main_board = document.getElementById("main-board");
 const promotion_board = document.getElementById("promotion-board");
 
+const winning_text = document.getElementById("winning-text");
+winning_text.style.display = "none";
+
+const replay_button = document.getElementById("replay-button");
+replay_button.style.display = "none";
+replay_button.disabled = true;
+replay_button.addEventListener("mousedown", async () => {
+    await reload_page();
+});
+
 document.getElementById("return-button").addEventListener("mousedown", async () => {
     await return_home();
 })
@@ -610,6 +646,11 @@ async function engine_move() {
 async function return_home()
 {
     window.location.href = "http://127.0.0.1:5000/";
+}
+
+async function reload_page()
+{
+    window.location.href = "http://127.0.0.1:5000/play";
 }
 
 async function get_bot_value() {
