@@ -33,7 +33,7 @@
     height: 30vw;
 }
 
-#return-button {
+.call-buttons {
     background-color: #ffffff;
     color: #006400; /* Dark green text */
     border: 2px solid #ffffff;
@@ -45,6 +45,9 @@
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
     position: absolute;
+}
+
+#return-button {
     top: 5%;
     left: 7%;
 }
@@ -53,6 +56,32 @@
     color: #004d00;
     transform: scale(1.05);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+#replay-button {
+    top: 50%;
+    left: 46.2%;
+}
+
+#replay-button:hover {
+    color: #004d00;
+    transform: scale(1.05);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+#winning-text {
+    background-color: white;
+    border: 2px solid #ffffff;
+    padding: 0.75em 2em;
+    font-size: 1.1rem;
+    font-weight: bold;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+    width: 18vw;
+    text-align: center;
+    position: absolute;
+    top: 40%;
+    left: 39.2%;
 }
 
 .promotion-img {
