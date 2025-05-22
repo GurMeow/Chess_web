@@ -38,6 +38,11 @@ function find_color(i, j)
     }
 }
 
+function unwrite_notation(notation)
+{
+    
+}
+
 function same_piece_color_for_turn(piece)
 {
     if (piece[0] === "W" && whites_turn)
@@ -192,7 +197,11 @@ function switch_rook_for_castle(i, j, i2, j2)
 
 
 async function mousedown(i, j) {
-    if (!check_if_selected_is_move(i, j) && can_play)
+    if (bot && !whites_turn)
+    {
+        console.log(await engine_move())
+    }
+    else if (!check_if_selected_is_move(i, j) && can_play)
     {
         clear_all_buttons_color();
 
@@ -431,8 +440,9 @@ function Set_promotion_board()
 }
 
 
-function Create_board() {
-
+async function Create_board(){
+    bot = await get_bot_value();
+    console.log(bot)
 
     for (let i = 0; i < 8; i++) {
         const new_row = document.createElement("tr");
@@ -521,11 +531,17 @@ function Create_board() {
 const main_board = document.getElementById("main-board");
 const promotion_board = document.getElementById("promotion-board");
 
+document.getElementById("return-button").addEventListener("mousedown", async () => {
+    await return_home();
+})
+
 const color1 = "rgb(115, 149, 82)";
 const color1Dark = "rgb(185, 202, 67)";
 const color2 = "rgb(235, 236, 208)";
 const color2Dark = "rgb(245,246,130)";
 let color_check = true;
+
+let bot;
 
 const value_board = [];
 const button_board = [];
@@ -559,7 +575,7 @@ const pieces_board =
     ["WRook", "WKnight", "WBishop", "WQueen", "WKing", "WBishop", "WKnight", "WRook"]
 ];
 
-Create_board();
+Create_board().then();
 Set_promotion_board();
 
 disable_promotion();
@@ -587,4 +603,21 @@ async function play_move(notation) {
         method: "POST",
         body: formData
     });
+}
+
+async function engine_move() {
+    const response = await fetch("http://127.0.0.1:5000/get_engine_move")
+
+    return await response.json();
+}
+
+async function return_home()
+{
+    window.location.href = "http://127.0.0.1:5000/";
+}
+
+async function get_bot_value() {
+    const response = await fetch("http://127.0.0.1:5000/get_bot")
+
+    return await response.json();
 }
