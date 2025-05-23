@@ -67,6 +67,9 @@ def move_queen(row, column, board):
 
 def move_pawn(row, column, board):
     moves = []
+    for pin in board[row][column]["pinned_to"]:
+        if pin[2] == "absolute":
+            return moves
     if board[row][column]["color"] == "black":
         #IF black:
         if row < 7 and board[row+1][column]["piece"] == "-1":
@@ -101,6 +104,9 @@ def move_pawn(row, column, board):
 def move_knight(row, column, board):
     piece = board[row][column]
     moves = []
+    for pin in board[row][column]["pinned_to"]:
+        if pin[2] == "absolute":
+            return moves
     possible_move_basic(piece, row + 2, column - 1, board, moves)
     possible_move_basic(piece, row + 2, column + 1, board, moves)
     possible_move_basic(piece, row + 1, column + 2, board, moves)
