@@ -303,20 +303,39 @@ app.template_folder = template_dir
 static_dir = os.path.abspath('web/static')
 app.static_folder = static_dir
 
+bot = False
+
 @app.route("/")
 def load_home_page():
+    global bot
+    bot = False
+    return render_template("main.html", title="Home | Chess App")
+
+@app.route("/play")
+def play():
     global turn, depth, chess_board
     turn = "white"
     depth = 2
     chess_board = init_game_board()
     chess_board = update_possible_moves(chess_board)
-    return render_template("index.html")
+    return render_template("index.html", title="Main Game | Chess App")
+
+@app.route("/play_bot")
+def change_bot():
+    global bot
+    bot = True
+
+
+@app.route("/get_bot")
+def get_bot():
+    global bot
+    return jsonify(bot)
+
 
 @app.route("/get_move", methods=['POST'])
 def get_possible_moves():
     posx = request.form.get('posx')
     posy = request.form.get('posy')
-    print(chess_board)
     return jsonify(chess_board[int(posx)][int(posy)]["possible_moves"])
 
 
@@ -332,10 +351,11 @@ def play_move():
 @app.route("/get_engine_move")
 def get_engine_move():
     global turn, depth, chess_board
-    return test_file.minimax_move_undo(depth,chess_board,turn,1)
+    return jsonify(test_file.minimax_move_undo(depth,chess_board,turn,1))
 
 
 @app.route("/settings")
 def set_settings():
     global depth
     depth = request.form.get("depth")
+
