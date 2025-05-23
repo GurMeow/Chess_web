@@ -64,7 +64,10 @@ function check_for_king(i, j)
 
 function unwrite_notation(notation)
 {
-
+    const letter = notation[0].charCodeAt(0)-65;
+    const number = 8 - Number(notation[1]);
+    console.log(number, letter);
+    return [number, letter];
 }
 
 function same_piece_color_for_turn(piece)
@@ -217,6 +220,139 @@ function switch_rook_for_castle(i, j, i2, j2)
     button_board[i2][j2].querySelector("img").style.width = "4vw";
     button_board[i2][j2].querySelector("img").style.height = "4vw";
     button_board[i2][j2].querySelector("img").style.display = "";
+}
+
+function move_type(type)
+{
+    if (type === "o-o")
+    {
+        return "small";
+    }
+    else if (type === "o-o-o")
+    {
+        return "long";
+    }
+    else if (type.slice(-2) === "qu")
+    {
+        return "queen";
+    }
+    else if (type.slice(-2) === "ro")
+    {
+        return "rook";
+    }
+    else if (type.slice(-2) === "bi")
+    {
+        return "bishop";
+    }
+    else if (type.slice(-2) === "kn")
+    {
+        return "knight";
+    }
+    else
+    {
+        return "normal";
+    }
+}
+
+function switch_imgs(i, j) {
+    button_board[i][j].querySelector("img").src = Enter_picture(pieces_board[i][j]);
+    button_board[i][j].querySelector("img").style.width = "4vw";
+    button_board[i][j].querySelector("img").style.height = "4vw";
+    button_board[i][j].querySelector("img").style.display = "";
+}
+
+function switch_bot_promotions_imgs(i, j, piece) {
+    button_board[i][j].querySelector("img").src = Enter_picture(piece);
+    button_board[i][j].querySelector("img").style.width = "4vw";
+    button_board[i][j].querySelector("img").style.height = "4vw";
+    button_board[i][j].querySelector("img").style.display = "";
+}
+
+
+function move_bot(first_position, second_position)
+{
+    const [prev_i, prev_j] = first_position
+    const [i, j] = second_position;
+
+    pieces_board[i][j] = pieces_board[prev_i][prev_j];
+    pieces_board[prev_i][prev_j] = "-";
+
+
+    // const piece_img = previous_button.querySelector("img").cloneNode(true);
+
+    const img = button_board[prev_i][prev_j].querySelector("img");
+    img.src = "";
+    img.style.display = "none";
+    switch_imgs(i, j)
+}
+
+async function engine_turn()
+{
+    console.log("e")
+
+    can_play = false;
+    whites_turn = !whites_turn;
+
+    let engine_move_played = await engine_move();
+    engine_move_played = engine_move_played[1];
+
+    console.log(engine_move_played);
+
+    const bot_move_type = move_type(engine_move_played);
+
+    let first_position, second_position;
+
+    if(bot_move_type !== "small" && bot_move_type !== "long")
+    {
+        first_position = engine_move_played.slice(0, 2);
+        second_position = engine_move_played.slice(4, 6);
+
+        const second_unwritten = unwrite_notation(second_position);
+
+        move_bot(unwrite_notation(first_position), second_unwritten);
+
+
+        console.log(bot_move_type, first_position, second_position);
+
+        console.log(unwrite_notation(first_position), unwrite_notation(second_position))
+
+
+        if (bot_move_type === "queen")
+        {
+            pieces_board[second_unwritten[0]][second_unwritten[1]] = "BQueen";
+            switch_bot_promotions_imgs(second_unwritten[0],second_unwritten[1], "BQueen");
+        }
+        else if (bot_move_type === "rook")
+        {
+            pieces_board[second_unwritten[0]][second_unwritten[1]] = "BRook";
+            switch_bot_promotions_imgs(second_unwritten[0],second_unwritten[1], "BRook");
+        }
+        else if (bot_move_type === "bishop")
+        {
+            pieces_board[second_unwritten[0]][second_unwritten[1]] = "BBishop";
+            switch_bot_promotions_imgs(second_unwritten[0],second_unwritten[1], "BBishop");
+        }
+        else if (bot_move_type === "knight")
+        {
+            pieces_board[second_unwritten[0]][second_unwritten[1]] = "BKnight";
+            switch_bot_promotions_imgs(second_unwritten[0],second_unwritten[1], "BKnight");
+        }
+    }
+    else if (bot_move_type === "small")
+    {
+        move_bot([0, 4], [0, 6]);
+        move_bot([0, 7], [0, 5]);
+    }
+    else if (bot_move_type === "long")
+    {
+        move_bot([0, 4], [0, 2]);
+        move_bot([0, 0], [0, 3]);
+    }
+
+    console.log(engine_move_played)
+    await play_move(engine_move_played);
+
+    can_play = true;
 }
 
 
@@ -381,10 +517,12 @@ async function mousedown(i, j) {
         const img = button_board[previous_coords[0]][previous_coords[1]].querySelector("img");
         img.src = "";
         img.style.display = "none";
-        button_board[i][j].querySelector("img").src = Enter_picture(pieces_board[i][j]);
-        button_board[i][j].querySelector("img").style.width = "4vw";
-        button_board[i][j].querySelector("img").style.height = "4vw";
-        button_board[i][j].querySelector("img").style.display = "";
+        switch_imgs(i, j);
+
+        if (bot)
+        {
+            await engine_turn();
+        }
     }
 }
 
