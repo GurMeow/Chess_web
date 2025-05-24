@@ -62,8 +62,20 @@ function check_for_king(i, j)
     return true;
 }
 
+function bot_king_check(i, j)
+{
+    if (pieces_board[i][j] === "WKing")
+    {
+        show_winning_text("Black");
+        return false;
+    }
+
+    return true;
+}
+
 function unwrite_notation(notation)
 {
+    console.log(notation)
     const letter = notation[0].charCodeAt(0)-65;
     const number = 8 - Number(notation[1]);
     console.log(number, letter);
@@ -291,9 +303,9 @@ async function engine_turn()
     console.log("e")
 
     can_play = false;
-    whites_turn = !whites_turn;
 
     let engine_move_played = await engine_move();
+    console.log(engine_move_played)
     engine_move_played = engine_move_played[1];
 
     console.log(engine_move_played);
@@ -353,6 +365,8 @@ async function engine_turn()
     await play_move(engine_move_played);
 
     can_play = true;
+
+    can_play = bot_king_check(second_position[0], second_position[1]);
 }
 
 
@@ -459,7 +473,6 @@ async function mousedown(i, j) {
             can_play = false;
             promotion = true;
             enable_promotion();
-
         }
         else if (i === 7 && pieces_board[previous_coords[0]][previous_coords[1]] === "BPawn" && can_play)
         {
@@ -507,7 +520,11 @@ async function mousedown(i, j) {
         pieces_board[previous_coords[0]][previous_coords[1]] = "-";
 
 
-        whites_turn = !whites_turn;
+        if (!bot)
+        {
+            whites_turn = !whites_turn;
+        }
+
         king_castle = false;
         queen_castle = false;
 
