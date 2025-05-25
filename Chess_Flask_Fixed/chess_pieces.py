@@ -147,11 +147,11 @@ def move_king(row, column, board):
         if pot_rook1["piece"] == "rook" and pot_rook1["times_moved"] == 0:
             # if pot_rook1["possible_moves"]:
             if main.contains_possible_move(pot_rook1,[row, 5]):
-                if not main.is_attack_points_in_range([row,7],[row,4],board,piece["color"]):
+                if not main.is_attack_points_in_range([row, 7],[row, 4], board, piece["color"]):
                     moves.append(["o-o"])
         if pot_rook2["piece"] == "rook" and pot_rook2["times_moved"] == 0:
             if main.contains_possible_move(pot_rook2,[row, 3]):
-                if not main.is_attack_points_in_range([row,7],[row,4],board,piece["color"]):
+                if not main.is_attack_points_in_range([row, 4],[row, 0],board, piece["color"]):
                     moves.append(["o-o-o"])
     return moves
 
