@@ -121,6 +121,18 @@ def attacked_points(turn, board):
         for j, piece in enumerate(row):
             if turn == piece["color"] or piece["color"] == "-1":
                 continue
+            if piece["piece"] == "pawn":
+                if piece["color"] == "white":
+                    if i > 0 and j > 0:
+                        attacked_points.append([i-1, j-1])
+                    if i > 0 and j < 7:
+                        attacked_points.append([i-1, j+1])
+                else:
+                    if i < 7 and j > 0:
+                        attacked_points.append([i+1, j-1])
+                    if i < 7 and j < 7:
+                        attacked_points.append([i+1, j+1])
+                continue
             for possibility in board[i][j]["possible_moves"]:
                 if possibility == ["o-o"] or possibility == ["o-o-o"]:
                     continue
@@ -358,4 +370,3 @@ def get_engine_move():
 def set_settings():
     global depth
     depth = request.form.get("depth")
-
