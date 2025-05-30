@@ -129,13 +129,14 @@ def undo_move(board, snapshot):
         board[fr][fc]["times_moved"] = snapshot["prev_times_moved"]
 
 
-def generate_moves(board, turn):
+def generate_moves(board, turn, order_moves):
     """
     Returns a list of move entries:
     - Normal: ("normal", fr, fc, tr, tc, notation)
     - Special (castling/promotion): ("special", new_board, notation)
     """
     moves = []
+
     for i, row in enumerate(board):
         for j, pos in enumerate(row):
             if pos["color"] != turn:
@@ -188,10 +189,15 @@ def generate_moves(board, turn):
                 tr, tc = possibility[0], possibility[1]
                 notation = f"{chr(65+fc)}{8-fr}->{chr(65+tc)}{8-tr}"
                 moves.append(("normal", fr, fc, tr, tc, notation))
+    if order_moves:
+        move_order = move_ordering(moves, turn, board)
+        # print(moves, end = "\n\n")
+        # print(move_order)
+        return move_order
     return moves
 
 
-def minimax_move_undo(depth, board, turn, current_depth,
+def minimax_move_undo(depth, board, turn, current_depth=0,
                       alpha=float('-inf'), beta=float('inf')):
     """
     Alpha-beta minimax using in-place move/undo for normals,
@@ -207,7 +213,10 @@ def minimax_move_undo(depth, board, turn, current_depth,
     is_max = (turn == "white")
     best = [float('-inf') if is_max else float('inf'), ""]
     next_turn = "black" if turn == "white" else "white"
-    possible_moves = generate_moves(board, turn)
+    if current_depth < depth * 2 - 1:
+        possible_moves = generate_moves(board, turn, True)
+    else:
+        possible_moves = generate_moves(board, turn, False)
     if not possible_moves:
         for i in range(8):
             for j in range(8):
@@ -248,3 +257,94 @@ def minimax_move_undo(depth, board, turn, current_depth,
             break
 
     return best
+
+
+def move_ordering(moves, turn, board):
+    move_order = []
+    if turn == "white":
+        next_turn = "black"
+    else:
+        next_turn = "white"
+    for mv in moves:
+        kind = mv[0]
+        if kind == "normal":
+            _, fr, fc, tr, tc, notation = mv
+            snap = make_move(board, (fr, fc), (tr, tc))
+            res = minimax_move_undo(0, board, next_turn)
+            undo_move(board, snap)
+        else:
+            _, new_b, notation = mv
+            res = minimax_move_undo(0, new_b, next_turn)
+        move_order.append([mv, res[0]])
+    #Sorting
+    for i in range(len(move_order)):
+        did_swap = False
+        for j in range(len(move_order)-i-1):
+            if turn == "white":
+                if move_order[j][1] < move_order[j+1][1]:
+                    #OO me found shiny new way to switch values!
+                    move_order[j], move_order[j + 1] = move_order[j + 1], move_order[j]
+                    did_swap = True
+            else:
+                if move_order[j][1] > move_order[j+1][1]:
+                    #OO me found shiny new way to switch values!
+                    move_order[j], move_order[j + 1] = move_order[j + 1], move_order[j]
+                    did_swap = True
+        if not did_swap:
+            break
+    for i ,element in enumerate(move_order):
+        element.pop()
+        move_order[i] = element[0]
+    return move_order
+
+
+def decode_move(move):
+    if move == "o-o" or move == "o-o-o":
+        return [move]
+    return [8 - int(move[5]), ord(move[4])-65]
+
+
+def merge_sort_merger(arr, left_pos, middle_pos, right_pos):
+    len1 = middle_pos - left_pos + 1
+    len2 = right_pos - middle_pos
+    arr1 = [0] * len1
+    arr2 = [0] * len2
+#   Turns out you can create long empty lists like that.
+    for i in range(len1):
+        arr1[i] = arr[left_pos + i]
+    for j in range(len2):
+        arr2[j] = arr[middle_pos + j + 1]
+    #intilaizing thingies
+    i = 0
+    j = 0
+    k = left_pos
+
+    while i < len1 and j < len2:
+        if arr1[i] <= arr2[j]:
+            arr[k] = arr1[i]
+            i += 1
+        else:
+            arr[k] = arr2[j]
+            j += 1
+        k += 1
+
+    while i < len1:
+        arr[k] = arr1[i]
+        i += 1
+        k += 1
+
+    while j < len2:
+        arr[k] = arr2[j]
+        j += 1
+        k += 1
+
+
+def merge_sort(arr, left_pos, right_pos):
+    if left_pos < right_pos:
+        middle_pos = (left_pos + right_pos) // 2
+        merge_sort(arr, left_pos, middle_pos)
+        merge_sort(arr, middle_pos + 1, right_pos)
+        merge_sort_merger(arr, left_pos, middle_pos, right_pos)
+
+
+
