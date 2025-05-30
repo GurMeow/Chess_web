@@ -253,7 +253,7 @@ def init_game_board():
     return board
 
 turn = "white"
-depth = 2
+depth = 1.5
 chess_board = init_game_board()
 chess_board = update_possible_moves(chess_board)
 
@@ -327,7 +327,7 @@ def load_home_page():
 def play():
     global turn, depth, chess_board
     turn = "white"
-    depth = 2
+    depth = 2.5
     chess_board = init_game_board()
     chess_board = update_possible_moves(chess_board)
     return render_template("index.html", title="Main Game | Chess App")
@@ -363,7 +363,10 @@ def play_move():
 @app.route("/get_engine_move")
 def get_engine_move():
     global turn, depth, chess_board
-    return jsonify(test_file.minimax_move_undo(depth,chess_board,turn,1))
+    start = time.time()
+    res = jsonify(test_file.minimax_move_undo(depth,chess_board,turn,1))
+    print(f"took {time.time() - start} seconds")
+    return res
 
 
 @app.route("/settings")
