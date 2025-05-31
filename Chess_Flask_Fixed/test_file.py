@@ -198,7 +198,7 @@ def generate_moves(board, turn, order_moves):
 
 
 def minimax_move_undo(depth, board, turn, current_depth=0,
-                      alpha=float('-inf'), beta=float('inf')):
+                      alpha=float('-inf'), beta=float('inf'), previous_eval=None):
     """
     Alpha-beta minimax using in-place move/undo for normals,
     deepcopy for specials.
@@ -206,8 +206,17 @@ def minimax_move_undo(depth, board, turn, current_depth=0,
     """
     main.update_possible_moves(board)
     score = eval_board.evaluate_current_board(board)
+    continue_flag = False
+    if previous_eval:
+        pass
     # Terminal or max depth
-    if abs(score) > 1000 or current_depth == 2 * depth:
+    if current_depth == depth * 2 + 6:
+        return [score,""]
+    if current_depth >= 2 * depth and previous_eval and abs(previous_eval - score) > 3:
+        continue_flag = True
+        # print(previous_eval - score)
+        print(f"deepsearched with {current_depth} / {depth *2} overflow!")
+    if abs(score) > 1000 or (current_depth >= 2 * depth and not continue_flag):
         return [score, ""]
 
     is_max = (turn == "white")
@@ -233,12 +242,12 @@ def minimax_move_undo(depth, board, turn, current_depth=0,
             _, fr, fc, tr, tc, notation = mv
             snap = make_move(board, (fr, fc), (tr, tc))
             res = minimax_move_undo(depth, board, next_turn,
-                                    current_depth+1, alpha, beta)
+                                    current_depth+1, alpha, beta, previous_eval=score)
             undo_move(board, snap)
         else:
             _, new_b, notation = mv
             res = minimax_move_undo(depth, new_b, next_turn,
-                                    current_depth+1, alpha, beta)
+                                    current_depth+1, alpha, beta, previous_eval=score)
         val = res[0]
 
         if is_max:
@@ -345,6 +354,3 @@ def merge_sort(arr, left_pos, right_pos):
         merge_sort(arr, left_pos, middle_pos)
         merge_sort(arr, middle_pos + 1, right_pos)
         merge_sort_merger(arr, left_pos, middle_pos, right_pos)
-
-
-
