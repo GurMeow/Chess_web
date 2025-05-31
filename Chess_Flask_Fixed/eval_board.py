@@ -96,7 +96,7 @@ def all_possible_boards(board, turn):
 def eval_pawn(board, pos, color, row, column):
     points = 1
     if (column == 3 or column == 4) and (row == 3 or row == 4):
-        points += 0.3
+        points += 0.25
     if pos["defenders"] > 1 and pos["attackers"] > 1:
         points += pos["defenders"] * 0.1
     points -= pos["attackers"] * 0.1
@@ -131,8 +131,8 @@ def eval_king(board, pos, color, row, column):
     points = 10000
     if pos["hasCastled"]:
         points += 1
-    if pos["times_moved"]:
-        points += 0.2
+    if pos["times_moved"] != 0 and not pos["hasCastled"]:
+        points -= 0.2
     points += 0.05 * pos["defenders"]
     board[row][column]["value"] = points
     return points
