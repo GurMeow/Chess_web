@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Home | Chess App</title>
+    <link rel="stylesheet" href="../static/main_page.css" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='favicon.png') }}"
+    />
+  </head>
+  <body>
+    <button
+      id="local_button"
+      onclick='window.location.href = "http://127.0.0.1:5000/"'
+    >
+      Main page
+    </button>
+    <div class="align" id="eval_bar">
+      <h3>Eval bar</h3>
+      <input id="eval_bar_input" type="checkbox" />
+    </div>
+    <div id="depth" class="align">
+      <h3 id="depth_display">Depth (4)</h3>
+      <input
+        id="depth_input"
+        type="range"
+        min="1"
+        max="6"
+        step="1"
+        onchange="set_depth()"
+      />
+    </div>
+    <script src="../static/settings.js"></script>
+  </body>
+</html>
