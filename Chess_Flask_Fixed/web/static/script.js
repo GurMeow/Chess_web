@@ -360,11 +360,13 @@ async function engine_turn()
     {
         move_bot([0, 4], [0, 6]);
         move_bot([0, 7], [0, 5]);
+        can_play = true;
     }
     else if (bot_move_type === "long")
     {
         move_bot([0, 4], [0, 2]);
         move_bot([0, 0], [0, 3]);
+        can_play = true;
     }
 
     console.log(engine_move_played)
