@@ -589,6 +589,35 @@ async function play_promotion(piece)
     await engine_turn();
 }
 
+function upd_notations(notation)
+{
+    let row_color;
+
+    if (!whites_notation)
+    {
+        row_color = "black-"
+    }
+    else
+    {
+        row_color = "white-"
+    }
+    notations.push(notation)
+
+    const bold = document.createElement("b");
+    const notation_paragraph = document.createElement("p");
+    notation_paragraph.className = `${row_color}notation-text`;
+    notation_paragraph.style.top = `${row_position}vw`
+    notation_paragraph.innerHTML = notation
+    bold.appendChild(notation_paragraph)
+    document.getElementById("notation-box").appendChild(bold);
+
+    if (!whites_notation)
+    {
+        row_position = row_position + 3;
+    }
+    whites_notation = !whites_notation
+}
+
 
 function Set_promotion_board()
 {
@@ -734,6 +763,10 @@ const color2 = "rgb(235, 236, 208)";
 const color2Dark = "rgb(245,246,130)";
 let color_check = true;
 
+const notations = [];
+let whites_notation = true;
+let row_position = 0;
+
 let bot;
 
 const value_board = [];
@@ -790,6 +823,8 @@ async function get_possible_moves(posx, posy) {
 
 
 async function play_move(notation) {
+    upd_notations(notation);
+
     const formData = new FormData();
     formData.append("move_encoding", notation);
     await fetch("http://127.0.0.1:5000/play_move", {
