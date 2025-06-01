@@ -24,6 +24,34 @@
     left: 39%;
 }
 
+#settings {
+    position: absolute;
+    top: 78%;
+    left: 39%;
+}
+#eval_bar {
+    position: absolute;
+    top: 34%;
+    left: 39%;
+}
+
+#depth {
+    position: absolute;
+    top: 42%;
+    left: 39%;
+}
+
+.vertical_align {
+  display: flex;
+  flex-direction: column;
+}
+.center {
+  align-items: center;
+}
+.align {
+  display: flex;
+  flex-direction: row;
+}
 button {
     background-color: #ffffff; /* White base for contrast */
     color: #006400; /* Dark green text */
