@@ -354,7 +354,7 @@ def load_home_page():
 
 @app.route("/play")
 def play():
-    global turn, depth, chess_board
+    global turn, depth, chess_board, move_dict
     turn = "white"
     chess_board, zobrist_table = init_game_board()
     chess_board = update_possible_moves(chess_board)
@@ -398,15 +398,16 @@ def get_engine_move():
     z_table = copy.deepcopy(zobrist_table)
     z_hash = copy.deepcopy(get_zobrist_hash(chess_board, zobrist_table))
     mov_dict = copy.deepcopy(move_dict)
-    res = jsonify(test_file.minimax_move_undo(depth, chess_board, turn, zobrist_table = z_table, zobirst_hash= z_hash, move_dict = mov_dict))
+    thingy = test_file.minimax_move_undo(depth, chess_board, turn, zobrist_table = z_table, zobirst_hash= z_hash, move_dict = mov_dict)
+    res = jsonify (thingy)
     print(f"took {time.time() - start} seconds")
     return res
 
 
 @app.route("/settings")
 def settings():
-
     return render_template("settings.html")
+
 
 @app.route("/set_depth", methods = ["POST"])
 def set_depth():
@@ -414,3 +415,8 @@ def set_depth():
     depth = float(request.form.get("depth"))
     # print(depth)
     return "true"
+
+
+@app.route("/get_depth")
+def get_depth():
+    return jsonify(depth)
