@@ -11,11 +11,13 @@ from flask import Flask, render_template, redirect, url_for, jsonify, request, s
 import test_file
 import chess_pieces
 import eval_board
+import random
 import os
+from collections import defaultdict
 
 
 def encoding_to_move(command):
-    global turn
+    global turn, zobrist_table
     update_possible_moves(chess_board)
     if command == "o-o-o" or command == "o-o":
         nope_flag = 0
@@ -96,7 +98,9 @@ def encoding_to_move(command):
         turn = "black"
     else:
         turn = "white"
-    return chess_board
+    move_dict[get_zobrist_hash(chess_board, zobrist_table)] += 1
+    return chess_board, move_dict[get_zobrist_hash(chess_board, zobrist_table)]
+
 
 def is_attack_points_in_range(point_a,point_b,board,turn):
     for i in range(abs(point_a[0]-point_b[0])+1):
@@ -159,21 +163,22 @@ def update_possible_moves(board):
             board[i][j]["attackers"] = 0
             board[i][j]["pinned_to"] = []
             board[i][j]["possible_moves"] = []
+            board[i][j]["checks"] = []
     for i in range(8):
         for j in range(8):
             if is_king(board[i][j]):
                 king_positions.append([i, j])
                 continue
             if board[i][j]["color"] != "-1":
-                board[i][j]["possible_moves"] = possible_moves(i, j, board)
+                board[i][j]["possible_moves"], board[i][j]["checks"] = possible_moves(i, j, board)
     for pos in king_positions:
-        board[pos[0]][pos[1]]["possible_moves"] = possible_moves(pos[0], pos[1], board)
+        board[pos[0]][pos[1]]["possible_moves"], _ = possible_moves(pos[0], pos[1], board)
     for i in range(8):
         for j in range(8):
             if not board[i][j]["pinned_to"]:
                 continue
             if board[i][j]["color"] != "-1":
-                board[i][j]["possible_moves"] = possible_moves(i, j, board)
+                board[i][j]["possible_moves"], board[i][j]["checks"] = possible_moves(i, j, board)
     return board
 
 
@@ -249,13 +254,37 @@ def init_game_board():
     for i in range(8):
         for j in range(8):
             board[i][j]["times_moved"] = 0
+    piece_types = ["pawn", "knight", "bishop", "rook", "queen", "king"]
+    colors = ["white", "black"]
 
-    return board
+    zobrist_table = {
+        (sq, piece, color): random.getrandbits(64)
+        for sq in range(64)
+        for piece in piece_types
+        for color in colors
+    }
+    return board, zobrist_table
+
+
+def get_zobrist_hash(board, zobrist_table):
+    h = 0
+    for row in range(8):
+        for col in range(8):
+            piece = board[row][col]
+            if piece["piece"] != "-1":
+                piece_type = piece["piece"]
+                color = piece["color"]
+                sq = row * 8 + col
+                h ^= zobrist_table[(sq, piece_type, color)]
+    return h
+
 
 turn = "white"
-depth = 1.5
-chess_board = init_game_board()
+depth = 2
+chess_board, zobrist_table = init_game_board()
 chess_board = update_possible_moves(chess_board)
+move_dict = defaultdict(int)
+move_dict[get_zobrist_hash(chess_board, zobrist_table)] = 1
 
 if __name__ == '__main__':
     autoplay = False
@@ -327,10 +356,12 @@ def load_home_page():
 def play():
     global turn, depth, chess_board
     turn = "white"
-    depth = 2.5
-    chess_board = init_game_board()
+    chess_board, zobrist_table = init_game_board()
     chess_board = update_possible_moves(chess_board)
+    move_dict = defaultdict(int)
+    move_dict[get_zobrist_hash(chess_board, zobrist_table)] = 1
     return render_template("index.html", title="Main Game | Chess App")
+
 
 @app.route("/play_bot")
 def change_bot():
@@ -355,7 +386,7 @@ def get_possible_moves():
 def play_move():
     global turn, chess_board
     move_encoding = request.form.get("move_encoding")
-    chess_board = encoding_to_move(move_encoding)
+    chess_board, times_position_happend = encoding_to_move(move_encoding)
     chess_board = update_possible_moves(chess_board)
     return jsonify(chess_board)
 
@@ -364,12 +395,22 @@ def play_move():
 def get_engine_move():
     global turn, depth, chess_board
     start = time.time()
-    res = jsonify(test_file.minimax_move_undo(depth,chess_board,turn,1))
+    z_table = copy.deepcopy(zobrist_table)
+    z_hash = copy.deepcopy(get_zobrist_hash(chess_board, zobrist_table))
+    mov_dict = copy.deepcopy(move_dict)
+    res = jsonify(test_file.minimax_move_undo(depth, chess_board, turn, zobrist_table = z_table, zobirst_hash= z_hash, move_dict = mov_dict))
     print(f"took {time.time() - start} seconds")
     return res
 
 
 @app.route("/settings")
-def set_settings():
+def settings():
+
+    return render_template("settings.html")
+
+@app.route("/set_depth", methods = ["POST"])
+def set_depth():
     global depth
-    depth = request.form.get("depth")
+    depth = float(request.form.get("depth"))
+    # print(depth)
+    return "true"
