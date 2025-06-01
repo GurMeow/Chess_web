@@ -30,6 +30,15 @@ def evaluate_current_board(board):
     return points
 
 
+
+def has_check(board):
+    for i in range(8):
+        for j in range(8):
+            if board[i][j]["checks"]:
+                return True
+    return False
+
+
 def all_possible_boards(board, turn):
     boards = [[], []]
     for i, row in enumerate(board):
