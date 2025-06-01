@@ -2,95 +2,7 @@ import copy
 import main
 import eval_board
 
-# def make_move(board, from_sq, to_sq):
-#     """
-#     Mutate board in place:
-#       - Move the piece at from_sq to to_sq
-#       - Return a snapshot of what was at to_sq and any metadata you need to restore.
-#     from_sq/to_sq are (row, col) tuples.
-#     """
-#     fr, fc = from_sq
-#     tr, tc = to_sq
-#
-#     moved = board[fr][fc]
-#     captured = board[tr][tc]
-#     prev_times_moved = moved.get("times_moved", None)
-#
-#     # Do the move:
-#     board[tr][tc] = moved
-#     board[fr][fc] = {"color": "-1", "piece": "-1"}
-#     if prev_times_moved is not None:
-#         board[tr][tc]["times_moved"] = prev_times_moved + 1
-#
-#     # Return snapshot for undo
-#     return {
-#         "from_sq": (fr, fc), "to_sq": (tr, tc),
-#         "moved_piece": moved, "captured_piece": captured,
-#         "prev_times_moved": prev_times_moved
-#     }
-#
-#
-# def undo_move(board, snapshot):
-#     """
-#     Restore the board exactly as it was before make_move.
-#     """
-#     fr, fc = snapshot["from_sq"]
-#     tr, tc = snapshot["to_sq"]
-#
-#     board[fr][fc] = snapshot["moved_piece"]
-#     board[tr][tc] = snapshot["captured_piece"]
-#
-#     if snapshot["prev_times_moved"] is not None:
-#         board[fr][fc]["times_moved"] = snapshot["prev_times_moved"]
-#
-#
-# def generate_moves(board, turn):
-#     moves = []
-#     for i, row in enumerate(board):
-#         for j, pos in enumerate(row):
-#             if pos["color"] == turn:
-#                 for possibility in pos["possible_moves"]:
-#                     moves.append((i, j, possibility[0], possibility[1], f"{chr(65+j)}{8-i}->{chr(65+possibility[1])}{8-possibility[0]}"))
-#     return moves
-#
-#
-# def minimax_move_undo(depth, board, turn, current_depth, alpha=float('-inf'), beta=float('inf')):
-#     main.update_possible_moves(board)
-#     current_score = eval_board.evaluate_current_board(board)
-#
-#     if current_depth == 2 * depth or abs(current_score) > 1000:
-#         return [current_score, ""]
-#
-#     is_maximizing = (turn == "white")
-#     best_move = [float('-inf') if is_maximizing else float('inf'), ""]
-#
-#     moves = generate_moves(board, turn)
-#
-#     for (fr, fc, tr, tc, notation) in moves:
-#         snapshot = make_move(board, (fr, fc), (tr, tc))
-#         next_turn = "black" if turn == "white" else "white"
-#
-#         eval_result = minimax_move_undo(depth, board, next_turn, current_depth + 1, alpha, beta)
-#         undo_move(board, snapshot)
-#
-#         value = eval_result[0]
-#
-#         if is_maximizing:
-#             if value > best_move[0]:
-#                 best_move = [value, notation]
-#             alpha = max(alpha, value)
-#         else:
-#             if value < best_move[0]:
-#                 best_move = [value, notation]
-#             beta = min(beta, value)
-#
-#         if beta <= alpha:
-#             break
-#
-#     return best_move
-
-
-def make_move(board, from_sq, to_sq):
+def make_move(board, from_sq, to_sq, zobrist_hash, zobrist_table):
     """
     Mutate board in place for a normal move:
       - Move piece from from_sq to to_sq
@@ -104,6 +16,8 @@ def make_move(board, from_sq, to_sq):
     captured = board[tr][tc]
     prev_times_moved = moved.get("times_moved", None)
 
+    zobrist_hash = update_zobrist_hash(zobrist_hash, from_sq, to_sq, moved, zobrist_table, captured)
+
     # Execute move
     board[tr][tc] = moved
     board[fr][fc] = {"color": "-1", "piece": "-1"}
@@ -113,10 +27,10 @@ def make_move(board, from_sq, to_sq):
     # Snapshot for undo
     return {"from_sq": (fr, fc), "to_sq": (tr, tc),
             "moved_piece": moved, "captured_piece": captured,
-            "prev_times_moved": prev_times_moved}
+            "prev_times_moved": prev_times_moved, "prev_hash": zobrist_hash}, zobrist_hash
 
 
-def undo_move(board, snapshot):
+def undo_move(board, snapshot, zobrist_hash, zobrist_table):
     """
     Restore a normal move using snapshot.
     """
@@ -127,9 +41,12 @@ def undo_move(board, snapshot):
     board[tr][tc] = snapshot["captured_piece"]
     if snapshot["prev_times_moved"] is not None:
         board[fr][fc]["times_moved"] = snapshot["prev_times_moved"]
+    zobrist_hash = update_zobrist_hash(zobrist_hash, (fr, fc), (tr, tc),
+                                       snapshot["moved_piece"], zobrist_table, snapshot["captured_piece"])
+    return zobrist_hash
 
 
-def generate_moves(board, turn, order_moves):
+def generate_moves(board, turn, zobrist_table, z_hash, move_dict, order_moves):
     """
     Returns a list of move entries:
     - Normal: ("normal", fr, fc, tr, tc, notation)
@@ -165,7 +82,7 @@ def generate_moves(board, turn, order_moves):
                         new_board[row0][3] = new_board[row0][0]
                         new_board[row0][4] = {"color": "-1", "piece": "-1"}
                         new_board[row0][0] = {"color": "-1", "piece": "-1"}
-                    moves.append(("special", new_board, notation))
+                    moves.append(("castling", new_board, notation))
                     continue
 
                 # Promotion
@@ -179,25 +96,24 @@ def generate_moves(board, turn, order_moves):
                             new_board[fr][fc] = {"color": "-1", "piece": "-1"}
                             new_board[tr][tc]["piece"] = promo
                             notation = f"{chr(65+fc)}{8-fr}->{chr(65+tc)}{8-tr}{promo[:2]}"
-                            moves.append(("special", new_board, notation))
+                            moves.append(("promotion", new_board, notation))
                         continue
                 except Exception:
                     pass
-
                 # Normal move
                 fr, fc = i, j
                 tr, tc = possibility[0], possibility[1]
                 notation = f"{chr(65+fc)}{8-fr}->{chr(65+tc)}{8-tr}"
                 moves.append(("normal", fr, fc, tr, tc, notation))
     if order_moves:
-        move_order = move_ordering(moves, turn, board)
+        move_order = move_ordering(moves, turn, board, z_hash, zobrist_table, move_dict)
         # print(moves, end = "\n\n")
         # print(move_order)
         return move_order
     return moves
 
 
-def minimax_move_undo(depth, board, turn, current_depth=0,
+def minimax_move_undo(depth, board, turn, zobrist_table, zobirst_hash, move_dict, current_depth=0,
                       alpha=float('-inf'), beta=float('inf'), previous_eval=None):
     """
     Alpha-beta minimax using in-place move/undo for normals,
@@ -207,15 +123,20 @@ def minimax_move_undo(depth, board, turn, current_depth=0,
     main.update_possible_moves(board)
     score = eval_board.evaluate_current_board(board)
     continue_flag = False
-    if previous_eval:
-        pass
+    forceful_continue_flag = False
+    if move_dict[zobirst_hash] >= 3:
+        return [0, ""]
+
+    if eval_board.has_check(board) and current_depth <= 2*depth + 12 and depth >= current_depth * 2:
+        forceful_continue_flag = True
+        print(f"forceful deep-searched with {current_depth} / {depth *2} overflow!")
     # Terminal or max depth
-    if current_depth == depth * 2 + 6:
+    if current_depth == depth * 2 + 6 and not forceful_continue_flag:
         return [score,""]
-    if current_depth >= 2 * depth and previous_eval and abs(previous_eval - score) > 3:
+    if current_depth >= 2 * depth and previous_eval and abs(previous_eval - score) >= 3:
         continue_flag = True
         # print(previous_eval - score)
-        print(f"deepsearched with {current_depth} / {depth *2} overflow!")
+        print(f"deep-searched with {current_depth} / {depth *2} overflow!")
     if abs(score) > 1000 or (current_depth >= 2 * depth and not continue_flag):
         return [score, ""]
 
@@ -223,9 +144,9 @@ def minimax_move_undo(depth, board, turn, current_depth=0,
     best = [float('-inf') if is_max else float('inf'), ""]
     next_turn = "black" if turn == "white" else "white"
     if current_depth < depth * 2 - 1:
-        possible_moves = generate_moves(board, turn, True)
+        possible_moves = generate_moves(board, turn, zobrist_table, zobirst_hash, move_dict, True)
     else:
-        possible_moves = generate_moves(board, turn, False)
+        possible_moves = generate_moves(board, turn, zobrist_table, zobirst_hash, move_dict, False)
     if not possible_moves:
         for i in range(8):
             for j in range(8):
@@ -240,14 +161,19 @@ def minimax_move_undo(depth, board, turn, current_depth=0,
         kind = mv[0]
         if kind == "normal":
             _, fr, fc, tr, tc, notation = mv
-            snap = make_move(board, (fr, fc), (tr, tc))
-            res = minimax_move_undo(depth, board, next_turn,
+            snap, z_hash = make_move(board, (fr, fc), (tr, tc), zobirst_hash, zobrist_table)
+            move_dict[z_hash] += 1
+            res = minimax_move_undo(depth, board, next_turn, zobrist_table, z_hash, move_dict,
                                     current_depth+1, alpha, beta, previous_eval=score)
-            undo_move(board, snap)
+            move_dict[z_hash] -= 1
+            undo_move(board, snap, zobirst_hash, zobrist_table)
         else:
             _, new_b, notation = mv
-            res = minimax_move_undo(depth, new_b, next_turn,
+            z_hash = main.get_zobrist_hash(new_b, zobrist_table)
+            move_dict[z_hash] += 1
+            res = minimax_move_undo(depth, new_b, next_turn, zobrist_table, z_hash, move_dict,
                                     current_depth+1, alpha, beta, previous_eval=score)
+            move_dict[z_hash] -= 1
         val = res[0]
 
         if is_max:
@@ -268,7 +194,7 @@ def minimax_move_undo(depth, board, turn, current_depth=0,
     return best
 
 
-def move_ordering(moves, turn, board):
+def move_ordering(moves, turn, board, zobrist_hash, zobrist_table, move_dict):
     move_order = []
     if turn == "white":
         next_turn = "black"
@@ -278,12 +204,13 @@ def move_ordering(moves, turn, board):
         kind = mv[0]
         if kind == "normal":
             _, fr, fc, tr, tc, notation = mv
-            snap = make_move(board, (fr, fc), (tr, tc))
-            res = minimax_move_undo(0, board, next_turn)
-            undo_move(board, snap)
+            snap, z_hash = make_move(board, (fr, fc), (tr, tc), zobrist_hash, zobrist_table)
+            res = minimax_move_undo(-20, board, next_turn, zobrist_table, z_hash, move_dict)
+            undo_move(board, snap, z_hash, zobrist_table)
         else:
             _, new_b, notation = mv
-            res = minimax_move_undo(0, new_b, next_turn)
+            z_hash = main.get_zobrist_hash(new_b, zobrist_table)
+            res = minimax_move_undo(-20, new_b, next_turn, zobrist_table, z_hash, move_dict)
         move_order.append([mv, res[0]])
     #Sorting
     for i in range(len(move_order)):
@@ -354,3 +281,25 @@ def merge_sort(arr, left_pos, right_pos):
         merge_sort(arr, left_pos, middle_pos)
         merge_sort(arr, middle_pos + 1, right_pos)
         merge_sort_merger(arr, left_pos, middle_pos, right_pos)
+
+
+def update_zobrist_hash(zobrist_hash, from_sq, to_sq, moved_piece, zobrist_table, captured_piece=None):
+    fr, fc = from_sq
+    tr, tc = to_sq
+    from_index = fr * 8 + fc
+    to_index = tr * 8 + tc
+
+    color = moved_piece["color"]
+    piece = moved_piece["piece"]
+    # print(zobrist_table[(from_index, piece, color)])
+    # Remove piece from original square
+    zobrist_hash ^= zobrist_table[(from_index, piece, color)]
+
+    # Remove captured piece if any
+    if captured_piece and captured_piece["piece"] != "-1":
+        zobrist_hash ^= zobrist_table[(to_index, captured_piece["piece"], captured_piece["color"])]
+
+    # Add moved piece to new square
+    zobrist_hash ^= zobrist_table[(to_index, piece, color)]
+
+    return zobrist_hash
