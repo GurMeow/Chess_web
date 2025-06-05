@@ -300,6 +300,40 @@ function move_bot(first_position, second_position)
     switch_imgs(i, j)
 }
 
+function enable_timers()
+{
+    clearInterval(whites_counting);
+    clearInterval(blacks_counting);
+    if (whites_turn)
+    {
+        whites_counting = setInterval(() => {
+            if (whites_time === 0)
+            {
+                show_winning_text("Black");
+                can_play = false;
+                clear_all_buttons_color();
+                clearInterval(whites_counting);
+            }
+            whites_time--;
+            console.log(whites_time);
+        }, 1000);
+    }
+    else if (!bot)
+    {
+        blacks_counting = setInterval(() => {
+            if (blacks_time === 0)
+            {
+                show_winning_text("White");
+                can_play = false;
+                clear_all_buttons_color();
+                clearInterval(blacks_counting);
+            }
+            blacks_time--;
+            console.log(blacks_time);
+        }, 1000);
+    }
+}
+
 async function engine_turn()
 {
     // console.log("e")
@@ -471,6 +505,11 @@ async function mousedown(i, j) {
     else if (can_play)
     {
         can_play = check_for_king(i, j);
+
+        if (enable_timer)
+        {
+            enable_timers();
+        }
 
         // console.log(pieces_board[previous_coords[0]][previous_coords[1]], i)
 
@@ -808,6 +847,28 @@ let promoting_pawn_coords = [];
 let can_play = true;
 
 
+let enable_timer;
+
+let whites_time;
+let blacks_time;
+
+async function enter_time_values()
+{
+    const data = await get_timer_values();
+    whites_time = data[0];
+    blacks_time = data[0];
+    enable_timer = data[1];
+
+    console.log(data)
+}
+
+enter_time_values().then();
+
+let whites_counting;
+let blacks_counting;
+
+
+
 const pieces_board =
 [
     ["BRook", "BKnight", "BBishop", "BQueen", "BKing", "BBishop", "BKnight", "BRook"],
@@ -835,9 +896,8 @@ async function get_possible_moves(posx, posy) {
         body: formData
     });
 
-    const data = await response.json(); // parse the JSON response
     // console.log(data); // do something with the data
-    return data;
+    return await response.json();
 }
 
 
@@ -873,3 +933,24 @@ async function get_bot_value() {
 
     return await response.json();
 }
+
+async function get_timer_values() {
+    const response = await fetch("http://127.0.0.1:5000/get_time")
+
+    return await response.json();
+}
+
+
+
+// ENABLE WHEN DEBUGGING
+// function set_personal_timer(time)
+// {
+//     whites_time = time;
+//     blacks_time = time;
+// }
+//
+// function stop_timers(time)
+// {
+//     clearInterval(whites_counting);
+//     clearInterval(blacks_counting);
+// }
