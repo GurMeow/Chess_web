@@ -32,6 +32,22 @@
         onchange="set_depth()"
       />
     </div>
+
+    <div class="align" id="timer_checkbox">
+      <h3>Enable Timer</h3>
+      <input id="timer_enable_input" type="checkbox" onchange="set_timer()"/>
+    </div>
+    <div id="timer" class="align">
+      <h3 id="timer_display">Minutes (10)</h3>
+      <input
+        id="timer_input"
+        type="range"
+        min="1"
+        max="30"
+        step="1"
+        onchange="set_time()"
+      />
+    </div>
     <script src="../static/settings.js"></script>
   </body>
 </html>
