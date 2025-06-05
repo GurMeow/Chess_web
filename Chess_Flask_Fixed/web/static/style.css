@@ -92,6 +92,20 @@
     left: 39.2%;
 }
 
+#white-counter-text {
+    position: absolute;
+    left: 15%;
+    top: 72%;
+    font-size: 2vw;
+}
+
+#black-counter-text {
+    position: absolute;
+    left: 15%;
+    top: 16%;
+    font-size: 2vw;
+}
+
 .white-notation-text {
     position: absolute;
     left: 2vw;
