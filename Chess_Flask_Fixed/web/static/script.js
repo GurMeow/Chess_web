@@ -586,7 +586,10 @@ async function play_promotion(piece)
     button_board[i][j].querySelector("img").style.height = "4vw";
     button_board[i][j].querySelector("img").style.display = "";
 
-    await engine_turn();
+    if (bot)
+    {
+        await engine_turn();
+    }
 }
 
 function upd_notations(notation)
