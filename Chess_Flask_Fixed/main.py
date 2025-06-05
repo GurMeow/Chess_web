@@ -384,7 +384,7 @@ def load_home_page():
 
 @app.route("/play")
 def play():
-    global turn, depth, chess_board, move_dict
+    global turn, depth, chess_board, move_dict, moves
     turn = "white"
     moves = []
     chess_board, zobrist_table = init_game_board()
@@ -457,4 +457,4 @@ def get_pgn():
     global moves
     res = test_file.create_full_pgn(moves)
     print(res)
-    return res
+    return jsonify(res)
