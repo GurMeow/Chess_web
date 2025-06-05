@@ -120,23 +120,26 @@ def minimax_move_undo(depth, board, turn, zobrist_table, zobirst_hash, move_dict
     deepcopy for specials.
     Returns [best_score, best_notation].
     """
-    main.update_possible_moves(board)
+    main.update_possible_moves(board, turn)
     score = eval_board.evaluate_current_board(board)
     continue_flag = False
     forceful_continue_flag = False
     if move_dict[zobirst_hash] >= 3:
         return [0, ""]
 
+    if eval_board.has_check(board) and current_depth < 1:
+        forceful_continue_flag = True
+
     if eval_board.has_check(board) and current_depth <= 2*depth + 12 and depth >= current_depth * 2:
         forceful_continue_flag = True
-        print(f"forceful deep-searched with {current_depth} / {depth *2} overflow!")
+        # print(f"forceful deep-searched with {current_depth} / {depth *2} overflow!")
     # Terminal or max depth
     if current_depth == depth * 2 + 6 and not forceful_continue_flag:
         return [score,""]
     if current_depth >= 2 * depth and previous_eval and abs(previous_eval - score) >= 3:
         continue_flag = True
         # print(previous_eval - score)
-        print(f"deep-searched with {current_depth} / {depth *2} overflow!")
+        # print(f"deep-searched with {current_depth} / {depth *2} overflow!")
     if abs(score) > 1000 or (current_depth >= 2 * depth and not continue_flag):
         return [score, ""]
 
@@ -223,7 +226,6 @@ def move_ordering(moves, turn, board, zobrist_hash, zobrist_table, move_dict):
                     did_swap = True
             else:
                 if move_order[j][1] > move_order[j+1][1]:
-                    #OO me found shiny new way to switch values!
                     move_order[j], move_order[j + 1] = move_order[j + 1], move_order[j]
                     did_swap = True
         if not did_swap:
@@ -303,3 +305,21 @@ def update_zobrist_hash(zobrist_hash, from_sq, to_sq, moved_piece, zobrist_table
     zobrist_hash ^= zobrist_table[(to_index, piece, color)]
 
     return zobrist_hash
+
+
+def record_moves(pgn_text, moves):
+    moves.append(pgn_text)
+    return moves
+
+
+def create_full_pgn(moves):
+    pgn = []
+    move_number = 1
+    for i in range(0, len(moves), 2):
+        white_move = moves[i]
+        black_move = moves[i + 1] if i + 1 < len(moves) else "" #O so you can do smth like the ? operator in js, thats cool
+        pgn.append(f"{move_number}. {white_move} {black_move}")
+        move_number += 1
+    pgn_str = " ".join(pgn)
+    return pgn_str
+
