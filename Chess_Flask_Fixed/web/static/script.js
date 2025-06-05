@@ -97,6 +97,23 @@ function same_piece_color_for_turn(piece)
     return false
 }
 
+function seconds_to_minutes_text(time)
+{
+    let seconds = time%60;
+    let minutes = (time-seconds)/60;
+
+    if (seconds < 10)
+    {
+        seconds = `0${seconds}`;
+    }
+    if (minutes < 10)
+    {
+        minutes = `0${minutes}`;
+    }
+
+    return `${minutes}:${seconds}`;
+}
+
 function chess_piece_inverted(piece)
 {
     if (!whites_turn || bot)
@@ -300,6 +317,22 @@ function move_bot(first_position, second_position)
     switch_imgs(i, j)
 }
 
+function activate_whites_timer()
+{
+    whites_counting = setInterval(() => {
+        if (whites_time === 0)
+        {
+            show_winning_text("Black");
+            can_play = false;
+            clear_all_buttons_color();
+            clearInterval(whites_counting);
+        }
+        document.getElementById("white-counter-text").innerHTML = `White: ${seconds_to_minutes_text(whites_time)}`;
+        whites_time--;
+        console.log(whites_time);
+    }, 1000);
+}
+
 function enable_timers()
 {
     clearInterval(whites_counting);
@@ -314,8 +347,9 @@ function enable_timers()
                 clear_all_buttons_color();
                 clearInterval(whites_counting);
             }
+            document.getElementById("white-counter-text").innerHTML = `White: ${seconds_to_minutes_text(whites_time)}`;
             whites_time--;
-            console.log(whites_time);
+            // console.log(whites_time);
         }, 1000);
     }
     else if (!bot)
@@ -328,6 +362,7 @@ function enable_timers()
                 clear_all_buttons_color();
                 clearInterval(blacks_counting);
             }
+            document.getElementById("black-counter-text").innerHTML = `Black: ${seconds_to_minutes_text(blacks_time)}`;
             blacks_time--;
             console.log(blacks_time);
         }, 1000);
@@ -403,6 +438,11 @@ async function engine_turn()
         move_bot([0, 4], [0, 2]);
         move_bot([0, 0], [0, 3]);
         can_play = true;
+    }
+
+    if (enable_timer)
+    {
+        activate_whites_timer();
     }
 
     // console.log(engine_move_played)
@@ -506,9 +546,13 @@ async function mousedown(i, j) {
     {
         can_play = check_for_king(i, j);
 
-        if (enable_timer)
+        if (enable_timer && !bot)
         {
             enable_timers();
+        }
+        else if (enable_timer && bot)
+        {
+            clearInterval(whites_counting);
         }
 
         // console.log(pieces_board[previous_coords[0]][previous_coords[1]], i)
@@ -696,6 +740,25 @@ function Set_promotion_board()
 }
 
 
+function set_timers()
+{
+    const white_timer = document.getElementById("white-counter-text");
+    const black_timer = document.getElementById("black-counter-text");
+
+
+    if (enable_timer)
+    {
+        white_timer.innerHTML = `White: ${seconds_to_minutes_text(whites_time)}`;
+        black_timer.innerHTML = `Black: ${seconds_to_minutes_text(blacks_time)}`;
+    }
+    else
+    {
+        white_timer.style.display = "none";
+        black_timer.style.display = "none";
+    }
+}
+
+
 async function Create_board(){
     bot = await get_bot_value();
     // console.log(bot)
@@ -858,11 +921,9 @@ async function enter_time_values()
     whites_time = data[0];
     blacks_time = data[0];
     enable_timer = data[1];
-
-    console.log(data)
 }
 
-enter_time_values().then();
+enter_time_values().then(set_timers);
 
 let whites_counting;
 let blacks_counting;
@@ -948,9 +1009,10 @@ async function get_timer_values() {
 //     whites_time = time;
 //     blacks_time = time;
 // }
-//
+
 // function stop_timers(time)
 // {
 //     clearInterval(whites_counting);
 //     clearInterval(blacks_counting);
 // }
+// set_personal_timer(10)
