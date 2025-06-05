@@ -17,8 +17,8 @@ from collections import defaultdict
 
 
 def encoding_to_move(command):
-    global turn, zobrist_table
-    update_possible_moves(chess_board)
+    global turn, zobrist_table, moves
+    update_possible_moves(chess_board, turn)
     if command == "o-o-o" or command == "o-o":
         nope_flag = 0
         if turn == "white" and (
@@ -31,6 +31,7 @@ def encoding_to_move(command):
                 chess_board[7][7] = chess_board[7][4]
                 chess_board[7][6]["times_moved"] += 1
                 chess_board[7][5]["times_moved"] += 1
+                moves = test_file.record_moves("O-O", moves)
             if command == "o-o-o":
                 chess_board[7][2] = chess_board[7][4]
                 chess_board[7][4] = {"color": "-1", "piece": "-1"}
@@ -38,6 +39,8 @@ def encoding_to_move(command):
                 chess_board[7][0] = {"color": "-1", "piece": "-1"}
                 chess_board[7][2]["times_moved"] += 1
                 chess_board[7][3]["times_moved"] += 1
+                moves = test_file.record_moves("O-O-O", moves)
+
         else:
             nope_flag += 1
         if turn == "black" and (
@@ -50,6 +53,7 @@ def encoding_to_move(command):
                 chess_board[0][7] = chess_board[0][4]
                 chess_board[0][5]["times_moved"] += 1
                 chess_board[0][6]["times_moved"] += 1
+                moves = test_file.record_moves("O-O", moves)
             if command == "o-o-o":
                 chess_board[0][2] = chess_board[7][4]
                 chess_board[0][4] = {"color": "-1", "piece": "-1"}
@@ -57,6 +61,8 @@ def encoding_to_move(command):
                 chess_board[0][0] = {"color": "-1", "piece": "-1"}
                 chess_board[0][2]["times_moved"] += 1
                 chess_board[0][3]["times_moved"] += 1
+                moves = test_file.record_moves("O-O-O", moves)
+
         else:
             if nope_flag == 1:
                 return "Illegal move"
@@ -67,6 +73,19 @@ def encoding_to_move(command):
             piece_row = 7 - int(parts[0][1]) + 1
             target_column = ord(parts[1][0]) - 65
             target_row = 7 - int(parts[1][1]) + 1
+            piece = copy.deepcopy(chess_board[piece_row][piece_column])
+            prefix = ""
+            if piece["piece"] == "queen":
+                prefix = "Q"
+            elif piece["piece"] == "rook":
+                prefix = "R"
+            elif piece["piece"] == "bishop":
+                prefix = "B"
+            elif piece["piece"] == "knight":
+                prefix = "N"
+            elif piece["piece"] == "king":
+                prefix = "K"
+            captured = copy.deepcopy(chess_board[target_row][target_column])
             if chess_board[piece_row][piece_column]["color"] != turn:
                 return "Illegal move"
             if contains_possible_move(chess_board[piece_row][piece_column],
@@ -74,21 +93,30 @@ def encoding_to_move(command):
                 if parts[1][2:] == "ro":
                     chess_board[piece_row][piece_column] = {"color": "-1", "piece": "-1"}
                     chess_board[target_row][target_column] = {"color": turn, "piece": "rook", "times_moved": 1}
+                    moves = test_file.record_moves(
+                        f"{prefix}{parts[0][0].lower()}{parts[0][1]}{parts[1][0].lower()}{parts[1][1]}R", moves)
                 if parts[1][2:] == "bi":
                     chess_board[piece_row][piece_column] = {"color": "-1", "piece": "-1"}
                     chess_board[target_row][target_column] = {"color": turn, "piece": "bishop",
                                                               "times_moved": 1}
+                    moves = test_file.record_moves(
+                        f"{prefix}{parts[0][0].lower()}{parts[0][1]}{parts[1][0].lower()}{parts[1][1]}B", moves)
                 if parts[1][2:] == "qu":
                     chess_board[piece_row][piece_column] = {"color": "-1", "piece": "-1"}
                     chess_board[target_row][target_column] = {"color": turn, "piece": "queen", "times_moved": 1}
+                    moves = test_file.record_moves(
+                        f"{prefix}{parts[0][0].lower()}{parts[0][1]}{parts[1][0].lower()}{parts[1][1]}Q", moves)
                 if parts[1][2:] == "kn":
                     chess_board[piece_row][piece_column] = {"color": "-1", "piece": "-1"}
                     chess_board[target_row][target_column] = {"color": turn, "piece": "knight",
                                                               "times_moved": 1}
+                    moves = test_file.record_moves(
+                        f"{prefix}{parts[0][0].lower()}{parts[0][1]}{parts[1][0].lower()}{parts[1][1]}N", moves)
             elif contains_possible_move(chess_board[piece_row][piece_column], [target_row, target_column]):
                 chess_board[piece_row][piece_column]["times_moved"] += 1
                 chess_board[target_row][target_column] = chess_board[piece_row][piece_column]
                 chess_board[piece_row][piece_column] = {"color": "-1", "piece": "-1"}
+                moves = test_file.record_moves(f"{prefix}{parts[0][0].lower()}{parts[0][1]}{parts[1][0].lower()}{parts[1][1]}", moves)
             else:
                 return "Illegal move"
         except Exception as e:
@@ -155,7 +183,7 @@ def contains_possible_move(piece, target):
     return False
 
 
-def update_possible_moves(board):
+def update_possible_moves(board, turn):
     king_positions = []
     for i in range(8):
         for j in range(8):
@@ -166,11 +194,12 @@ def update_possible_moves(board):
             board[i][j]["checks"] = []
     for i in range(8):
         for j in range(8):
+            if board[i][j]["color"] == "-1":
+                continue
             if is_king(board[i][j]):
                 king_positions.append([i, j])
                 continue
-            if board[i][j]["color"] != "-1":
-                board[i][j]["possible_moves"], board[i][j]["checks"] = possible_moves(i, j, board)
+            board[i][j]["possible_moves"], board[i][j]["checks"] = possible_moves(i, j, board)
     for pos in king_positions:
         board[pos[0]][pos[1]]["possible_moves"], _ = possible_moves(pos[0], pos[1], board)
     for i in range(8):
@@ -282,16 +311,17 @@ def get_zobrist_hash(board, zobrist_table):
 turn = "white"
 depth = 2
 chess_board, zobrist_table = init_game_board()
-chess_board = update_possible_moves(chess_board)
+chess_board = update_possible_moves(chess_board, turn)
 move_dict = defaultdict(int)
 move_dict[get_zobrist_hash(chess_board, zobrist_table)] = 1
+moves = []
 
 if __name__ == '__main__':
     autoplay = False
     run = True
     print_board(chess_board)
     start = time.time()
-    command = test_file.minimax_move_undo(depth,chess_board,turn,1)[1]
+    command = test_file.minimax_move_undo(depth, chess_board, turn,1)[1]
     print(command)
     print(f"calculation took {time.time() - start} seconds to finish")
     while run:
@@ -321,7 +351,7 @@ if __name__ == '__main__':
             if encoding_to_move(command) == "Illegal move":
                 print("Illegal move")
                 continue
-            update_possible_moves(chess_board)
+            update_possible_moves(chess_board, turn)
             print_board(chess_board)
             print(chess_board)
             if turn == "white":
@@ -356,8 +386,9 @@ def load_home_page():
 def play():
     global turn, depth, chess_board, move_dict
     turn = "white"
+    moves = []
     chess_board, zobrist_table = init_game_board()
-    chess_board = update_possible_moves(chess_board)
+    chess_board = update_possible_moves(chess_board, turn)
     move_dict = defaultdict(int)
     move_dict[get_zobrist_hash(chess_board, zobrist_table)] = 1
     return render_template("index.html", title="Main Game | Chess App")
@@ -387,7 +418,7 @@ def play_move():
     global turn, chess_board
     move_encoding = request.form.get("move_encoding")
     chess_board, times_position_happend = encoding_to_move(move_encoding)
-    chess_board = update_possible_moves(chess_board)
+    chess_board = update_possible_moves(chess_board, turn)
     return jsonify(chess_board)
 
 
@@ -420,3 +451,10 @@ def set_depth():
 @app.route("/get_depth")
 def get_depth():
     return jsonify(depth)
+
+@app.route("/get_pgn")
+def get_pgn():
+    global moves
+    res = test_file.create_full_pgn(moves)
+    print(res)
+    return res
