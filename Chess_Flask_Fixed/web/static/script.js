@@ -70,17 +70,17 @@ function bot_king_check(i, j)
         return false;
     }
 
-    console.log(i, j, pieces_board[i][j]);
+    // console.log(i, j, pieces_board[i][j]);
 
     return true;
 }
 
 function unwrite_notation(notation)
 {
-    console.log(notation)
+    // console.log(notation)
     const letter = notation[0].charCodeAt(0)-65;
     const number = 8 - Number(notation[1]);
-    console.log(number, letter);
+    // console.log(number, letter);
     return [number, letter];
 }
 
@@ -197,7 +197,7 @@ function check_if_selected_is_move(i, j)
 }
 
 function write_chess_notation(i, j) {
-    console.log(`${value_board[previous_coords[0]][previous_coords[1]]}->${value_board[i][j]}`)
+    // console.log(`${value_board[previous_coords[0]][previous_coords[1]]}->${value_board[i][j]}`)
     return `${value_board[previous_coords[0]][previous_coords[1]]}->${value_board[i][j]}`;
 }
 
@@ -302,15 +302,17 @@ function move_bot(first_position, second_position)
 
 async function engine_turn()
 {
-    console.log("e")
+    // console.log("e")
 
     can_play = false;
 
     let engine_move_played = await engine_move();
-    console.log(engine_move_played)
+    const engine_time = engine_move_played[0]
+    console.log(engine_time);
+    // console.log(engine_move_played)
     engine_move_played = engine_move_played[1];
 
-    console.log(engine_move_played);
+    // console.log(engine_move_played);
 
     const bot_move_type = move_type(engine_move_played);
 
@@ -330,9 +332,9 @@ async function engine_turn()
         move_bot(unwrite_notation(first_position), second_unwritten);
 
 
-        console.log(bot_move_type, first_position, second_position);
+        // console.log(bot_move_type, first_position, second_position);
 
-        console.log(unwrite_notation(first_position), unwrite_notation(second_position))
+        // console.log(unwrite_notation(first_position), unwrite_notation(second_position))
 
 
         if (bot_move_type === "queen")
@@ -369,7 +371,7 @@ async function engine_turn()
         can_play = true;
     }
 
-    console.log(engine_move_played)
+    // console.log(engine_move_played)
     await play_move(engine_move_played);
 }
 
@@ -391,7 +393,7 @@ async function mousedown(i, j) {
             previous_coords = null;
             active_button = [];
 
-            console.log("Deselected:", i, j);
+            // console.log("Deselected:", i, j);
             return;
         }
 
@@ -402,19 +404,19 @@ async function mousedown(i, j) {
             previous_button.style.backgroundColor = originalColor;
         }
 
-        console.log(pieces_board[i][j] !== "-" && same_piece_color_for_turn(pieces_board[i][j]))
+        // console.log(pieces_board[i][j] !== "-" && same_piece_color_for_turn(pieces_board[i][j]))
 
         // Set new active square
         if (pieces_board[i][j] !== "-" && same_piece_color_for_turn(pieces_board[i][j]))
         {
-            console.log("e")
+            // console.log("e")
             active_button = [i, j];
             previous_coords = [i, j];
             previous_button = clicked_button;
 
             clicked_button.style.backgroundColor = find_color(i, j)[1]; // Or whatever highlight color you like
 
-            console.log("Selected:", i, j);
+            // console.log("Selected:", i, j);
 
             const possible_moves = await get_possible_moves(i, j);
             check_for_castles(possible_moves);
@@ -423,26 +425,26 @@ async function mousedown(i, j) {
             {
                 possible_squares_to_go.push([7, 6]);
                 button_board[7][6].style.backgroundColor = find_color(7, 6)[1];
-                console.log("r")
+                // console.log("r")
             }
             else if (king_castle)
             {
                 possible_squares_to_go.push([0, 6]);
                 button_board[0][6].style.backgroundColor = find_color(0, 6)[1];
-                console.log("r")
+                // console.log("r")
             }
 
             if (queen_castle && whites_turn)
             {
                 possible_squares_to_go.push([7, 2]);
                 button_board[7][2].style.backgroundColor = find_color(7, 2)[1];
-                console.log("r")
+                // console.log("r")
             }
             else if (queen_castle)
             {
                 possible_squares_to_go.push([0, 2]);
                 button_board[0][2].style.backgroundColor = find_color(0, 2)[1];
-                console.log("r")
+                // console.log("r")
             }
 
             for (let i = 0; i < possible_moves.length; i++)
@@ -450,12 +452,12 @@ async function mousedown(i, j) {
                 if (possible_moves[i][0] !== "o-o" && possible_moves[i][0] !== "o-o-o")
                 {
                     const [possible_i, possible_j] = possible_moves[i];
-                    console.log(possible_i, possible_j)
+                    // console.log(possible_i, possible_j)
                     button_board[possible_i][possible_j].style.backgroundColor = find_color(possible_i, possible_j)[1];
                     possible_squares_to_go.push(possible_moves[i]);
                 }
             }
-            console.log(possible_squares_to_go)
+            // console.log(possible_squares_to_go)
         }
         else
         {
@@ -464,13 +466,13 @@ async function mousedown(i, j) {
             previous_button = null;
             possible_squares_to_go = [];
         }
-        console.log(possible_squares_to_go)
+        // console.log(possible_squares_to_go)
     }
     else if (can_play)
     {
         can_play = check_for_king(i, j);
 
-        console.log(pieces_board[previous_coords[0]][previous_coords[1]], i)
+        // console.log(pieces_board[previous_coords[0]][previous_coords[1]], i)
 
         if (i === 0 && pieces_board[previous_coords[0]][previous_coords[1]] === "WPawn" && can_play)
         {
@@ -487,7 +489,7 @@ async function mousedown(i, j) {
 
         promoting_pawn_coords = [i, j];
 
-        console.log(king_castle, i, j)
+        // console.log(king_castle, i, j)
         if (king_castle && i === 7 && j === 6)
         {
             switch_rook_for_castle(7, 7, 7, 5);
@@ -517,7 +519,7 @@ async function mousedown(i, j) {
             await play_move(write_chess_notation(i, j));
         }
 
-        console.log("e2")
+        // console.log("e2")
         clear_all_buttons_color();
 
         pieces_board[i][j] = pieces_board[previous_coords[0]][previous_coords[1]];
@@ -557,7 +559,7 @@ async function play_promotion(piece)
 {
     const [i, j] = promoting_pawn_coords;
 
-    console.log(write_chess_notation(promoting_pawn_coords[0], promoting_pawn_coords[1]), promoting_pawn_coords[0], promoting_pawn_coords[1])
+    // console.log(write_chess_notation(promoting_pawn_coords[0], promoting_pawn_coords[1]), promoting_pawn_coords[0], promoting_pawn_coords[1])
     if (whites_turn)
     {
         await play_move(`${write_chess_notation(i, j)}${piece}`)
@@ -566,15 +568,15 @@ async function play_promotion(piece)
     {
         await play_move(`${write_chess_notation(i, j)}${piece}`)
     }
-    console.log(previous_coords)
-    console.log(`${write_chess_notation(7, previous_coords[1])}${piece}`)
+    // console.log(previous_coords)
+    // console.log(`${write_chess_notation(7, previous_coords[1])}${piece}`)
 
     disable_promotion();
 
     can_play = true;
     promotion = false;
 
-    console.log(whites_turn)
+    // console.log(whites_turn)
 
     pieces_board[i][j] = chess_piece_inverted(piece);
 
@@ -657,7 +659,7 @@ function Set_promotion_board()
 
 async function Create_board(){
     bot = await get_bot_value();
-    console.log(bot)
+    // console.log(bot)
 
     for (let i = 0; i < 8; i++) {
         const new_row = document.createElement("tr");
@@ -760,6 +762,20 @@ document.getElementById("return-button").addEventListener("mousedown", async () 
     await return_home();
 })
 
+document.getElementById("copy-button").addEventListener("mousedown", async () => {
+    const response = await fetch("http://127.0.0.1:5000/get_pgn")
+
+    const data = await response.json(); // parse the JSON response
+    console.log(data)
+
+    try {
+        await navigator.clipboard.writeText(data);
+        console.log("Copied to clipboard!");
+    } catch (err) {
+        console.error("Failed to copy: ", err);
+    }
+})
+
 const color1 = "rgb(115, 149, 82)";
 const color1Dark = "rgb(185, 202, 67)";
 const color2 = "rgb(235, 236, 208)";
@@ -820,7 +836,7 @@ async function get_possible_moves(posx, posy) {
     });
 
     const data = await response.json(); // parse the JSON response
-    console.log(data); // do something with the data
+    // console.log(data); // do something with the data
     return data;
 }
 
