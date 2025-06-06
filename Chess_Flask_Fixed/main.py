@@ -325,6 +325,7 @@ move_dict[get_zobrist_hash(chess_board, zobrist_table)] = 1
 moves = []
 bot = False
 player_time = 600
+player_bonus_time = 0
 player_timer = False
 app = Flask(__name__)
 app.run(debug=True)
@@ -429,6 +430,12 @@ def change_time():
     player_time = int(request.form.get("player_time"))
     return jsonify(player_time)
 
+@app.route("/change_bonus_time", methods=["POST"])
+def change_bonus_time():
+    global player_bonus_time
+    player_bonus_time = int(request.form.get("player_bonus_time"))
+    return jsonify(player_bonus_time)
+
 
 @app.route("/change_timer", methods=["POST"])
 def change_timer():
@@ -440,5 +447,5 @@ def change_timer():
 
 @app.route("/get_time")
 def get_time():
-    global player_time, player_timer
-    return jsonify(player_time, player_timer)
+    global player_time, player_timer, player_bonus_time
+    return jsonify(player_time, player_timer, player_bonus_time)
