@@ -337,7 +337,7 @@ function enable_timers()
 {
     clearInterval(whites_counting);
     clearInterval(blacks_counting);
-    if (whites_turn)
+    if (!whites_turn)
     {
         whites_counting = setInterval(() => {
             if (whites_time === 0)
@@ -761,6 +761,10 @@ function set_timers()
 
 async function Create_board(){
     bot = await get_bot_value();
+    if (bot)
+    {
+        document.getElementById("black-counter-text").style.display = "none"
+    }
     // console.log(bot)
 
     for (let i = 0; i < 8; i++) {
