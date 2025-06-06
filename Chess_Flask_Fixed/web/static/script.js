@@ -339,6 +339,8 @@ function enable_timers()
     clearInterval(blacks_counting);
     if (!whites_turn)
     {
+        blacks_time += bonus_time;
+        document.getElementById("black-counter-text").innerHTML = `Black: ${seconds_to_minutes_text(blacks_time)}`;
         whites_counting = setInterval(() => {
             if (whites_time === 0)
             {
@@ -354,6 +356,8 @@ function enable_timers()
     }
     else if (!bot)
     {
+        whites_time += bonus_time;
+        document.getElementById("white-counter-text").innerHTML = `White: ${seconds_to_minutes_text(whites_time)}`;
         blacks_counting = setInterval(() => {
             if (blacks_time === 0)
             {
@@ -552,6 +556,8 @@ async function mousedown(i, j) {
         }
         else if (enable_timer && bot)
         {
+            whites_time += bonus_time;
+            document.getElementById("white-counter-text").innerHTML = `White: ${seconds_to_minutes_text(whites_time)}`;
             clearInterval(whites_counting);
         }
 
@@ -763,7 +769,7 @@ async function Create_board(){
     bot = await get_bot_value();
     if (bot)
     {
-        document.getElementById("black-counter-text").style.display = "none"
+        document.getElementById("black-counter-text").style.display = "none";
     }
     // console.log(bot)
 
@@ -915,6 +921,7 @@ let can_play = true;
 
 
 let enable_timer;
+let bonus_time;
 
 let whites_time;
 let blacks_time;
@@ -925,6 +932,8 @@ async function enter_time_values()
     whites_time = data[0];
     blacks_time = data[0];
     enable_timer = data[1];
+    bonus_time = data[2];
+    // console.log(bonus_time);
 }
 
 enter_time_values().then(set_timers);
