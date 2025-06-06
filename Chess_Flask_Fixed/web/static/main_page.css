@@ -53,6 +53,12 @@
     left: 39%;
 }
 
+#bonus_time {
+    position: absolute;
+    top: 26%;
+    left: 55%;
+}
+
 .vertical_align {
   display: flex;
   flex-direction: column;
