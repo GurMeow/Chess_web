@@ -11,6 +11,7 @@ from flask import Flask, render_template, redirect, url_for, jsonify, request, s
 import test_file
 import chess_pieces
 import eval_board
+import game_state
 import random
 import os
 from collections import defaultdict
@@ -202,6 +203,13 @@ def update_possible_moves(board, turn):
             board[i][j]["possible_moves"], board[i][j]["checks"] = possible_moves(i, j, board)
     for pos in king_positions:
         board[pos[0]][pos[1]]["possible_moves"], _ = possible_moves(pos[0], pos[1], board)
+        game_state.white_in_check = False
+        game_state.black_in_check = False
+        if board[pos[0]][pos[1]]["color"] == "white" and board[pos[0]][pos[1]]["attackers"] > 0:
+            game_state.white_in_check = True
+        if board[pos[0]][pos[1]]["color"] == "black" and board[pos[0]][pos[1]]["attackers"] > 0:
+            game_state.black_in_check = True
+        game_state.any_color_in_check = game_state.white_in_check or game_state.black_in_check
     for i in range(8):
         for j in range(8):
             if not board[i][j]["pinned_to"]:
@@ -315,58 +323,9 @@ chess_board = update_possible_moves(chess_board, turn)
 move_dict = defaultdict(int)
 move_dict[get_zobrist_hash(chess_board, zobrist_table)] = 1
 moves = []
-
-if __name__ == '__main__':
-    autoplay = False
-    run = True
-    print_board(chess_board)
-    start = time.time()
-    command = test_file.minimax_move_undo(depth, chess_board, turn,1)[1]
-    print(command)
-    print(f"calculation took {time.time() - start} seconds to finish")
-    while run:
-        if not autoplay:
-            command = input("Enter command: ")
-        if command == "exit":
-            break
-        elif command == "all possible boards":
-            for i in eval_board.all_possible_boards(chess_board, turn)[0]:
-                print_board(i)
-                print("\n\n\n")
-        elif command == "eval board":
-            print(f"evalualtion: {eval_board.evaluate_current_board(chess_board)}")
-        elif command == "apbi":
-            depth = input("please enter the depth you want: ")
-            for i in eval_board.get_all_possible_boards_after_n_moves(int(depth), chess_board, turn, 1)[0]:
-                print(i, end="\n\n\n")
-            # for i in eval_board.get_all_possible_boards_after_n_moves(int(depth), chess_board, turn, 1):
-            #     for j in i:
-            #         print(j)
-            #         print_board(j)
-            #         print("\n\n\n")
-        elif command == "get best move":
-            depth = input("please enter the depth you want: ")
-            print(eval_board.get_best_board_after_n_moves(depth, chess_board, turn, 1))
-        elif command[0].isupper() or command == "o-o" or command == "o-o-o":
-            if encoding_to_move(command) == "Illegal move":
-                print("Illegal move")
-                continue
-            update_possible_moves(chess_board, turn)
-            print_board(chess_board)
-            print(chess_board)
-            if turn == "white":
-                turn = "black"
-            else:
-                turn = "white"
-            start = time.time()
-            result = test_file.minimax_move_undo(depth,chess_board,turn,1)
-            command = result[1]
-            print(command)
-            print(f"calculation took {time.time()-start} to finish. with a position score of {result[0]}")
-        else:
-            print(eval(command))
-
-
+bot = False
+player_time = 600
+player_timer = False
 app = Flask(__name__)
 app.run(debug=True)
 template_dir = os.path.abspath('web/templates')
@@ -375,9 +334,6 @@ static_dir = os.path.abspath('web/static')
 app.static_folder = static_dir
 
 bot = False
-
-player_time = 600
-player_timer = False
 
 @app.route("/")
 def load_home_page():
@@ -390,6 +346,7 @@ def play():
     global turn, depth, chess_board, move_dict, moves
     turn = "white"
     moves = []
+    game_state.init()
     chess_board, zobrist_table = init_game_board()
     chess_board = update_possible_moves(chess_board, turn)
     move_dict = defaultdict(int)
@@ -407,30 +364,6 @@ def change_bot():
 def get_bot():
     global bot
     return jsonify(bot)
-
-
-@app.route("/change_time", methods=["POST"])
-def change_time():
-    global player_time
-    print("e")
-    player_time = int(request.form.get("player_time"))
-    print(player_time)
-    return jsonify(player_time)
-
-
-@app.route("/change_timer", methods=["POST"])
-def change_timer():
-    global player_timer
-    player_timer = request.form.get("player_timer")
-    player_timer = player_timer.lower() == "true"
-    print(player_timer)
-    return jsonify(player_timer)
-
-
-@app.route("/get_time")
-def get_time():
-    global player_time, player_timer
-    return jsonify(player_time, player_timer)
 
 
 @app.route("/get_move", methods=['POST'])
@@ -457,8 +390,10 @@ def get_engine_move():
     z_hash = copy.deepcopy(get_zobrist_hash(chess_board, zobrist_table))
     mov_dict = copy.deepcopy(move_dict)
     thingy = test_file.minimax_move_undo(depth, chess_board, turn, zobrist_table = z_table, zobirst_hash= z_hash, move_dict = mov_dict)
-    res = jsonify (thingy)
-    print(f"took {time.time() - start} seconds")
+    res = jsonify(thingy)
+    print(f"searched {game_state.moves_calculated} moves in {time.time() - start} seconds ({game_state.moves_calculated/(time.time()-start)} moves per second)")
+    print(f"got a score of {thingy[0]}")
+    game_state.moves_calculated = 0
     return res
 
 
@@ -479,9 +414,31 @@ def set_depth():
 def get_depth():
     return jsonify(depth)
 
+
 @app.route("/get_pgn")
 def get_pgn():
     global moves
     res = test_file.create_full_pgn(moves)
     print(res)
-    return jsonify(res)
+    return res
+
+
+@app.route("/change_time", methods=["POST"])
+def change_time():
+    global player_time
+    player_time = int(request.form.get("player_time"))
+    return jsonify(player_time)
+
+
+@app.route("/change_timer", methods=["POST"])
+def change_timer():
+    global player_timer
+    player_timer = request.form.get("player_timer")
+    player_timer = player_timer.lower() == "true"
+    return jsonify(player_timer)
+
+
+@app.route("/get_time")
+def get_time():
+    global player_time, player_timer
+    return jsonify(player_time, player_timer)
