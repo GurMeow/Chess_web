@@ -1,4 +1,6 @@
 import copy
+
+import game_state
 import main
 import eval_board
 
@@ -127,25 +129,28 @@ def minimax_move_undo(depth, board, turn, zobrist_table, zobirst_hash, move_dict
     if move_dict[zobirst_hash] >= 3:
         return [0, ""]
 
-    if eval_board.has_check(board) and current_depth < 1:
+    if game_state.any_color_in_check and current_depth < 1:
         forceful_continue_flag = True
 
-    if eval_board.has_check(board) and current_depth <= 2*depth + 12 and depth >= current_depth * 2:
+    if game_state.any_color_in_check and current_depth <= 2*depth + 12 and depth >= current_depth * 2:
         forceful_continue_flag = True
         # print(f"forceful deep-searched with {current_depth} / {depth *2} overflow!")
     # Terminal or max depth
     if current_depth == depth * 2 + 6 and not forceful_continue_flag:
-        return [score,""]
+        return [score, ""]
     if current_depth >= 2 * depth and previous_eval and abs(previous_eval - score) >= 3:
         continue_flag = True
         # print(previous_eval - score)
         # print(f"deep-searched with {current_depth} / {depth *2} overflow!")
+    game_state.moves_calculated += 1
     if abs(score) > 1000 or (current_depth >= 2 * depth and not continue_flag):
         return [score, ""]
 
     is_max = (turn == "white")
     best = [float('-inf') if is_max else float('inf'), ""]
     next_turn = "black" if turn == "white" else "white"
+    if current_depth > 1 and is_in_check_by_color(turn, board):
+        return [float('-inf') if turn == "black" else float('inf'), ""]
     if current_depth < depth * 2 - 1:
         possible_moves = generate_moves(board, turn, zobrist_table, zobirst_hash, move_dict, True)
     else:
@@ -158,7 +163,7 @@ def minimax_move_undo(depth, board, turn, zobrist_table, zobirst_hash, move_dict
                 if not board[i][j]["color"] == turn:
                     continue
                 if board[i][j]["checked"]:
-                    return [float('-inf') if turn == "black" else float('inf'),""]
+                    return [float('-inf') if turn == "black" else float('inf'), ""]
                 return [0, ""]
     for mv in possible_moves:
         kind = mv[0]
@@ -323,3 +328,12 @@ def create_full_pgn(moves):
     pgn_str = " ".join(pgn)
     return pgn_str
 
+
+def is_in_check_by_color(turn, board):
+    for i in range(8):
+        for j in range(8):
+            if board[i][j]["color"] != turn:
+                continue
+            if board[i][j]["checks"]:
+                return True
+    return False
