@@ -185,6 +185,9 @@ def contains_possible_move(piece, target):
 
 
 def update_possible_moves(board, turn):
+    game_state.king_count = 0
+    game_state.white_in_check = False
+    game_state.black_in_check = False
     king_positions = []
     for i in range(8):
         for j in range(8):
@@ -199,12 +202,11 @@ def update_possible_moves(board, turn):
                 continue
             if is_king(board[i][j]):
                 king_positions.append([i, j])
+                game_state.king_count += 1
                 continue
             board[i][j]["possible_moves"], board[i][j]["checks"] = possible_moves(i, j, board)
     for pos in king_positions:
         board[pos[0]][pos[1]]["possible_moves"], _ = possible_moves(pos[0], pos[1], board)
-        game_state.white_in_check = False
-        game_state.black_in_check = False
         if board[pos[0]][pos[1]]["color"] == "white" and board[pos[0]][pos[1]]["attackers"] > 0:
             game_state.white_in_check = True
         if board[pos[0]][pos[1]]["color"] == "black" and board[pos[0]][pos[1]]["attackers"] > 0:
@@ -325,7 +327,6 @@ move_dict[get_zobrist_hash(chess_board, zobrist_table)] = 1
 moves = []
 bot = False
 player_time = 600
-player_bonus_time = 0
 player_timer = False
 app = Flask(__name__)
 app.run(debug=True)
@@ -333,7 +334,7 @@ template_dir = os.path.abspath('web/templates')
 app.template_folder = template_dir
 static_dir = os.path.abspath('web/static')
 app.static_folder = static_dir
-
+player_bonus_time = 0
 bot = False
 
 @app.route("/")
@@ -430,6 +431,21 @@ def change_time():
     player_time = int(request.form.get("player_time"))
     return jsonify(player_time)
 
+
+@app.route("/change_timer", methods=["POST"])
+def change_timer():
+    global player_timer
+    player_timer = request.form.get("player_timer")
+    player_timer = player_timer.lower() == "true"
+    return jsonify(player_timer)
+
+
+@app.route("/get_time")
+def get_time():
+    global player_time, player_timer
+    return jsonify(player_time, player_timer)
+
+
 @app.route("/change_bonus_time", methods=["POST"])
 def change_bonus_time():
     global player_bonus_time
@@ -439,9 +455,6 @@ def change_bonus_time():
 
 @app.route("/change_timer", methods=["POST"])
 def change_timer():
-    global player_timer
-    player_timer = request.form.get("player_timer")
-    player_timer = player_timer.lower() == "true"
     return jsonify(player_timer)
 
 
