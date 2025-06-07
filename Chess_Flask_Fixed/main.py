@@ -422,7 +422,7 @@ def get_pgn():
     global moves
     res = test_file.create_full_pgn(moves)
     print(res)
-    return res
+    return jsonify(res)
 
 
 @app.route("/change_time", methods=["POST"])
