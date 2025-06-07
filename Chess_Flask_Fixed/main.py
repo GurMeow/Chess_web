@@ -432,20 +432,6 @@ def change_time():
     return jsonify(player_time)
 
 
-@app.route("/change_timer", methods=["POST"])
-def change_timer():
-    global player_timer
-    player_timer = request.form.get("player_timer")
-    player_timer = player_timer.lower() == "true"
-    return jsonify(player_timer)
-
-
-@app.route("/get_time")
-def get_time():
-    global player_time, player_timer
-    return jsonify(player_time, player_timer)
-
-
 @app.route("/change_bonus_time", methods=["POST"])
 def change_bonus_time():
     global player_bonus_time
@@ -455,6 +441,9 @@ def change_bonus_time():
 
 @app.route("/change_timer", methods=["POST"])
 def change_timer():
+    global player_timer
+    player_timer = request.form.get("player_timer")
+    player_timer = player_timer.lower() == "true"
     return jsonify(player_timer)
 
 
